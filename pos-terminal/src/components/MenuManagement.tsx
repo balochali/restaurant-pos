@@ -17,6 +17,7 @@ import {
   saveVariantsForMenuItem,
   getAllModifiers,
   createModifier,
+  deleteModifier,
   getItemModifierIds,
   saveModifiersForMenuItem,
   getComboComponents,
@@ -301,7 +302,7 @@ export default function MenuManagement() {
     if (!selectedItemId) return;
     try {
       await saveVariantsForMenuItem(selectedItemId, variants);
-      await saveModifiersForMenuItem(selectedItemId, selectedModifierIds);
+      await saveModifiersForMenuItem(selectedItemId, selectedModifierIds, currentUser?.id);
       setSuccess("Variants and modifiers updated successfully for selected item.");
       refreshAllData();
     } catch (err) {
@@ -313,10 +314,26 @@ export default function MenuManagement() {
     e.preventDefault();
     if (!newModName.trim()) return;
     try {
-      const created = await createModifier(newModName, parseFloat(newModPrice) || 0);
+      const created = await createModifier(
+        newModName,
+        parseFloat(newModPrice) || 0,
+        currentUser?.id,
+      );
       setSuccess(`Modifier "${created.name}" created.`);
       setNewModName("");
       setSelectedModifierIds([...selectedModifierIds, created.id]);
+      refreshAllData();
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
+  const handleDeleteModifier = async (id: string, name: string) => {
+    if (!confirm(`Delete modifier "${name}"?`)) return;
+    try {
+      await deleteModifier(id, currentUser?.id);
+      setSelectedModifierIds(selectedModifierIds.filter((mId) => mId !== id));
+      setSuccess(`Modifier "${name}" deleted.`);
       refreshAllData();
     } catch (err) {
       setError(String(err));
@@ -365,7 +382,7 @@ export default function MenuManagement() {
   const handleSaveCombo = async () => {
     if (!selectedComboParentId) return;
     try {
-      await saveComboComponents(selectedComboParentId, comboComponents);
+      await saveComboComponents(selectedComboParentId, comboComponents, currentUser?.id);
       setSuccess("Combo bundle composition saved successfully.");
       refreshAllData();
     } catch (err) {
@@ -728,27 +745,46 @@ export default function MenuManagement() {
                     {modifiers.map((m) => {
                       const isChecked = selectedModifierIds.includes(m.id);
                       return (
-                        <label key={m.id} className="modifier-checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedModifierIds([...selectedModifierIds, m.id]);
-                              } else {
-                                setSelectedModifierIds(
-                                  selectedModifierIds.filter((id) => id !== m.id),
-                                );
-                              }
-                            }}
-                          />
-                          <span>
-                            {m.name}{" "}
-                            <strong style={{ color: "#818cf8" }}>
-                              (+${m.price_adjustment.toFixed(2)})
-                            </strong>
-                          </span>
-                        </label>
+                        <div
+                          key={m.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "8px",
+                            padding: "4px 0",
+                          }}
+                        >
+                          <label className="modifier-checkbox-label" style={{ margin: 0 }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedModifierIds([...selectedModifierIds, m.id]);
+                                } else {
+                                  setSelectedModifierIds(
+                                    selectedModifierIds.filter((id) => id !== m.id),
+                                  );
+                                }
+                              }}
+                            />
+                            <span>
+                              {m.name}{" "}
+                              <strong style={{ color: "#c2693a" }}>
+                                (+${m.price_adjustment.toFixed(2)})
+                              </strong>
+                            </span>
+                          </label>
+                          <button
+                            type="button"
+                            className="btn-danger btn-sm"
+                            style={{ padding: "2px 6px", fontSize: "11px" }}
+                            onClick={() => handleDeleteModifier(m.id, m.name)}
+                          >
+                            ✕
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
@@ -868,6 +904,93 @@ export default function MenuManagement() {
                 >
                   + Add Component Item to Combo
                 </button>
+
+                {/* Bundled Pricing & Savings Breakdown (FR-2.5) */}
+                {selectedComboParentId && (
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      padding: "16px 20px",
+                      borderRadius: "14px",
+                      background: "#faf7f4",
+                      border: "1px solid var(--border-medium)",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "16px",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: "500" }}>
+                        Sum of Individual Items
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: "700",
+                          textDecoration:
+                            comboComponents.reduce((sum, comp) => {
+                              const child = items.find((i) => i.id === comp.child_item_id);
+                              return sum + (child ? child.base_price * comp.quantity : 0);
+                            }, 0) > (items.find((i) => i.id === selectedComboParentId)?.base_price || 0)
+                              ? "line-through"
+                              : "none",
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        $
+                        {comboComponents
+                          .reduce((sum, comp) => {
+                            const child = items.find((i) => i.id === comp.child_item_id);
+                            return sum + (child ? child.base_price * comp.quantity : 0);
+                          }, 0)
+                          .toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: "500" }}>
+                        Bundled Combo Package Price
+                      </div>
+                      <div style={{ fontSize: "22px", fontWeight: "800", color: "var(--accent)" }}>
+                        $
+                        {(
+                          items.find((i) => i.id === selectedComboParentId)?.base_price || 0
+                        ).toFixed(2)}
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const parent = items.find((i) => i.id === selectedComboParentId);
+                      const indivTotal = comboComponents.reduce((sum, comp) => {
+                        const child = items.find((i) => i.id === comp.child_item_id);
+                        return sum + (child ? child.base_price * comp.quantity : 0);
+                      }, 0);
+                      const bPrice = parent ? parent.base_price : 0;
+                      const savings = indivTotal - bPrice;
+                      const savingsPct = indivTotal > 0 ? (savings / indivTotal) * 100 : 0;
+
+                      if (savings <= 0) return null;
+
+                      return (
+                        <div
+                          style={{
+                            padding: "8px 16px",
+                            borderRadius: "20px",
+                            background: "#ecfdf5",
+                            border: "1px solid #a7f3d0",
+                            color: "#047857",
+                            fontWeight: "700",
+                            fontSize: "13px",
+                          }}
+                        >
+                          🎉 Customer Saves ${savings.toFixed(2)} ({savingsPct.toFixed(0)}% OFF)
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div style={{ marginTop: "24px" }}>

@@ -490,13 +490,27 @@ export async function getAllModifiers(): Promise<DbModifier[]> {
   );
 }
 
-export async function createModifier(name: string, priceAdjustment: number): Promise<DbModifier> {
+export async function createModifier(
+  name: string,
+  priceAdjustment: number,
+  performedByUserId?: string,
+): Promise<DbModifier> {
   const db = await getDb();
   const id = crypto.randomUUID();
   await db.execute(
     "INSERT INTO modifiers (id, name, price_adjustment, is_active) VALUES (?, ?, ?, 1)",
     [id, name.trim(), priceAdjustment],
   );
+
+  if (performedByUserId) {
+    await logAuditEvent({
+      userId: performedByUserId,
+      actionType: "MODIFIER_CREATE",
+      entityAffected: `Modifier:${name}`,
+      reason: "New item modifier created",
+    });
+  }
+
   return {
     id,
     name: name.trim(),
@@ -504,6 +518,44 @@ export async function createModifier(name: string, priceAdjustment: number): Pro
     is_active: 1,
     synced_at: null,
   };
+}
+
+export async function updateModifier(
+  id: string,
+  name: string,
+  priceAdjustment: number,
+  isActive: number,
+  performedByUserId?: string,
+): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    "UPDATE modifiers SET name = ?, price_adjustment = ?, is_active = ? WHERE id = ?",
+    [name.trim(), priceAdjustment, isActive, id],
+  );
+
+  if (performedByUserId) {
+    await logAuditEvent({
+      userId: performedByUserId,
+      actionType: "MODIFIER_UPDATE",
+      entityAffected: `Modifier:${name}`,
+      reason: "Item modifier details updated",
+    });
+  }
+}
+
+export async function deleteModifier(id: string, performedByUserId?: string): Promise<void> {
+  const db = await getDb();
+  await db.execute("DELETE FROM menu_item_modifiers WHERE modifier_id = ?", [id]);
+  await db.execute("DELETE FROM modifiers WHERE id = ?", [id]);
+
+  if (performedByUserId) {
+    await logAuditEvent({
+      userId: performedByUserId,
+      actionType: "MODIFIER_DELETE",
+      entityAffected: `Modifier:${id}`,
+      reason: "Item modifier deleted",
+    });
+  }
 }
 
 export async function getItemModifierIds(menuItemId: string): Promise<string[]> {
@@ -515,9 +567,22 @@ export async function getItemModifierIds(menuItemId: string): Promise<string[]> 
   return res.map((r) => r.modifier_id);
 }
 
+export async function getItemModifiersDetails(menuItemId: string): Promise<DbModifier[]> {
+  const db = await getDb();
+  return db.select<DbModifier[]>(
+    `SELECT m.id, m.name, m.price_adjustment, m.is_active, m.synced_at
+     FROM modifiers m
+     JOIN menu_item_modifiers mim ON m.id = mim.modifier_id
+     WHERE mim.menu_item_id = ? AND m.is_active = 1
+     ORDER BY m.name ASC`,
+    [menuItemId],
+  );
+}
+
 export async function saveModifiersForMenuItem(
   menuItemId: string,
   modifierIds: string[],
+  performedByUserId?: string,
 ): Promise<void> {
   const db = await getDb();
   await db.execute("DELETE FROM menu_item_modifiers WHERE menu_item_id = ?", [menuItemId]);
@@ -527,6 +592,15 @@ export async function saveModifiersForMenuItem(
       menuItemId,
       modId,
     ]);
+  }
+
+  if (performedByUserId) {
+    await logAuditEvent({
+      userId: performedByUserId,
+      actionType: "ITEM_MODIFIERS_SAVE",
+      entityAffected: `MenuItem:${menuItemId}`,
+      reason: `Updated item modifier links (${modifierIds.length} attached)`,
+    });
   }
 }
 
@@ -546,6 +620,7 @@ export async function getComboComponents(parentItemId: string): Promise<ComboCom
 export async function saveComboComponents(
   parentItemId: string,
   components: { child_item_id: string; quantity: number }[],
+  performedByUserId?: string,
 ): Promise<void> {
   const db = await getDb();
   await db.execute("DELETE FROM combo_items WHERE parent_item_id = ?", [parentItemId]);
@@ -560,5 +635,15 @@ export async function saveComboComponents(
   }
 
   // Ensure parent item has is_combo = 1
-  await db.execute("UPDATE menu_items SET is_combo = 1 WHERE id = ?", [parentItemId]);
+  const isComboFlag = components.length > 0 ? 1 : 0;
+  await db.execute("UPDATE menu_items SET is_combo = ? WHERE id = ?", [isComboFlag, parentItemId]);
+
+  if (performedByUserId) {
+    await logAuditEvent({
+      userId: performedByUserId,
+      actionType: "COMBO_SAVE",
+      entityAffected: `Combo:${parentItemId}`,
+      reason: `Saved combo composition (${components.length} components)`,
+    });
+  }
 }
