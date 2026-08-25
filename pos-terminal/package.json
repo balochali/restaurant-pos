@@ -7,24 +7,40 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "prepare": "husky"
   },
   "dependencies": {
+    "@noble/hashes": "^2.3.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-sql": "^2.4.0",
+    "bcryptjs": "^3.0.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@tailwindcss/vite": "^4.3.3",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.5.4",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.8.0",
+    "husky": "^9.1.7",
     "postcss": "^8.5.25",
+    "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.8.3",
+    "typescript-eslint": "^8.65.0",
     "vite": "^7.0.4"
   }
 }

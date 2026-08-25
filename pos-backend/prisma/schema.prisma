@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String     @id @default(uuid())
+  name             String
+  username         String     @unique
+  pinHash          String
+  role             Role
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  conflictFlag     Boolean    @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  auditLogs        AuditLog[]
+  orders           Order[]    @relation("CreatedByUser")
+}
+
+model MenuCategory {
+  id               String     @id @default(uuid())
+  name             String
+  displayOrder     Int        @default(0)
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  conflictFlag     Boolean    @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  items            MenuItem[]
+}
+
+model MenuItem {
+  id               String             @id @default(uuid())
+  categoryId       String
+  name             String
+  description      String?
+  basePrice        Decimal            @db.Decimal(10, 2)
+  taxRate          Decimal            @default(0) @db.Decimal(5, 2)
+  isAvailable      Boolean            @default(true)
+  imageUrl         String?
+  availableFrom    String?
+  availableUntil   String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  conflictFlag     Boolean            @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  variants         ItemVariant[]
+  category         MenuCategory       @relation(fields: [categoryId], references: [id])
+  modifiers        MenuItemModifier[]
+  orderItems       OrderItem[]
+  recipeLinks      RecipeLink[]
+}
+
+model ItemVariant {
+  id               String      @id @default(uuid())
+  menuItemId       String
+  name             String
+  price            Decimal     @db.Decimal(10, 2)
+  isActive         Boolean     @default(true)
+  conflictFlag     Boolean     @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  menuItem         MenuItem    @relation(fields: [menuItemId], references: [id])
+  orderItems       OrderItem[]
+}
+
+model Modifier {
+  id               String             @id @default(uuid())
+  name             String
+  priceAdjustment  Decimal            @default(0) @db.Decimal(10, 2)
+  isActive         Boolean            @default(true)
+  conflictFlag     Boolean            @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  menuItems        MenuItemModifier[]
+}
+
+model MenuItemModifier {
+  menuItemId       String
+  modifierId       String
+  conflictFlag     Boolean   @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  menuItem         MenuItem  @relation(fields: [menuItemId], references: [id])
+  modifier         Modifier  @relation(fields: [modifierId], references: [id])
+
+  @@id([menuItemId, modifierId])
+}
+
+model Table {
+  id               String      @id @default(uuid())
+  number           String      @unique
+  section          String?
+  capacity         Int
+  status           TableStatus @default(FREE)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  conflictFlag     Boolean     @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  orders           Order[]
+}
+
+model Order {
+  id               String      @id @default(uuid())
+  orderSource      OrderSource
+  tableId          String?
+  customerName     String?
+  customerPhone    String?
+  customerAddress  String?
+  status           OrderStatus @default(OPEN)
+  notes            String?
+  subtotal         Decimal     @default(0) @db.Decimal(10, 2)
+  discount         Decimal     @default(0) @db.Decimal(10, 2)
+  tax              Decimal     @default(0) @db.Decimal(10, 2)
+  total            Decimal     @default(0) @db.Decimal(10, 2)
+  createdById      String
+  createdLocallyAt DateTime
+  syncedAt         DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  conflictFlag     Boolean     @default(false)
+  serverReceivedAt DateTime?
+  createdBy        User        @relation("CreatedByUser", fields: [createdById], references: [id])
+  table            Table?      @relation(fields: [tableId], references: [id])
+  items            OrderItem[]
+  payments         Payment[]
+
+  @@index([createdAt])
+  @@index([createdById])
+}
+
+model OrderItem {
+  id               String          @id @default(uuid())
+  orderId          String
+  menuItemId       String
+  variantId        String?
+  modifiers        Json?
+  quantity         Int             @default(1)
+  unitPrice        Decimal         @db.Decimal(10, 2)
+  notes            String?
+  status           OrderItemStatus @default(PENDING)
+  conflictFlag     Boolean         @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  menuItem         MenuItem        @relation(fields: [menuItemId], references: [id])
+  order            Order           @relation(fields: [orderId], references: [id])
+  variant          ItemVariant?    @relation(fields: [variantId], references: [id])
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  orderId          String
+  method           PaymentMethod
+  amount           Decimal       @db.Decimal(10, 2)
+  tip              Decimal       @default(0) @db.Decimal(10, 2)
+  changeDue        Decimal       @default(0) @db.Decimal(10, 2)
+  status           PaymentStatus @default(COMPLETED)
+  createdAt        DateTime      @default(now())
+  conflictFlag     Boolean       @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  order            Order         @relation(fields: [orderId], references: [id])
+
+  @@index([method])
+}
+
+model Ingredient {
+  id               String       @id @default(uuid())
+  name             String
+  unit             String
+  currentStock     Decimal      @db.Decimal(10, 3)
+  reorderThreshold Decimal      @db.Decimal(10, 3)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  conflictFlag     Boolean      @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  recipeLinks      RecipeLink[]
+}
+
+model RecipeLink {
+  menuItemId       String
+  ingredientId     String
+  quantityUsed     Decimal    @db.Decimal(10, 3)
+  conflictFlag     Boolean    @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  ingredient       Ingredient @relation(fields: [ingredientId], references: [id])
+  menuItem         MenuItem   @relation(fields: [menuItemId], references: [id])
+
+  @@id([menuItemId, ingredientId])
+}
+
+model AuditLog {
+  id               String    @id @default(uuid())
+  userId           String
+  actionType       String
+  entityAffected   String
+  reason           String?
+  metadata         Json?
+  timestamp        DateTime  @default(now())
+  conflictFlag     Boolean   @default(false)
+  serverReceivedAt DateTime?
+  syncedAt         DateTime?
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  CASHIER
+  WAITER
+  KITCHEN_STAFF
+}
+
+enum TableStatus {
+  FREE
+  OCCUPIED
+  RESERVED
+  NEEDS_CLEANING
+}
+
+enum OrderSource {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  OPEN
+  SENT_TO_KITCHEN
+  IN_PREPARATION
+  READY
+  SERVED
+  PAID
+  CLOSED
+  VOIDED
+}
+
+enum OrderItemStatus {
+  PENDING
+  IN_PROGRESS
+  READY
+  SERVED
+  VOIDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  JAZZCASH
+  EASYPAISA
+  OTHER
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING_VERIFICATION
+  REFUNDED
+}

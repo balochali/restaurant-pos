@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+cd pos-terminal
+npx prettier --check .
+npx eslint . --ext .ts,.tsx
