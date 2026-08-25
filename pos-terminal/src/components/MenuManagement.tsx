@@ -170,6 +170,19 @@ export default function MenuManagement() {
   const [itemAvailableFrom, setItemAvailableFrom] = useState("");
   const [itemAvailableUntil, setItemAvailableUntil] = useState("");
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setItemImage(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const openAddItemModal = () => {
     setEditingItem(null);
     setItemName("");
@@ -473,6 +486,16 @@ export default function MenuManagement() {
                       )}
                     </div>
 
+                    {item.image_url && (
+                      <div style={{ margin: "10px 0", borderRadius: "10px", overflow: "hidden", height: "120px" }}>
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                    )}
+
                     <h5 className="item-title">{item.name}</h5>
                     <p className="item-desc">{item.description || "No description available."}</p>
 
@@ -488,6 +511,17 @@ export default function MenuManagement() {
                         onClick={() => handleToggleAvailable(item)}
                       >
                         {item.is_available === 1 ? "In Stock" : "Sold Out"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-secondary btn-sm"
+                        onClick={() => {
+                          setSelectedItemId(item.id);
+                          setActiveTab("variants_modifiers");
+                        }}
+                      >
+                        📏 Variants
                       </button>
 
                       <button
@@ -954,13 +988,51 @@ export default function MenuManagement() {
               </div>
 
               <div className="form-group">
-                <label>Image URL (optional)</label>
-                <input
-                  type="text"
-                  value={itemImage}
-                  onChange={(e) => setItemImage(e.target.value)}
-                  placeholder="https://..."
-                />
+                <label>Item Image (URL or Local File Upload)</label>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={itemImage}
+                    onChange={(e) => setItemImage(e.target.value)}
+                    placeholder="https://... or upload local file"
+                    style={{ flex: 1 }}
+                  />
+                  <label
+                    className="btn-secondary btn-sm"
+                    style={{ cursor: "pointer", margin: 0, padding: "8px 12px", whiteSpace: "nowrap" }}
+                  >
+                    📁 Upload File
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileChange}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+                {itemImage && (
+                  <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <img
+                      src={itemImage}
+                      alt="Preview"
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-medium)",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn-danger btn-sm"
+                      style={{ fontSize: "11px", padding: "4px 8px" }}
+                      onClick={() => setItemImage("")}
+                    >
+                      Clear Image
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
