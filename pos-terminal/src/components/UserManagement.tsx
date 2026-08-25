@@ -171,8 +171,8 @@ export default function UserManagement() {
     <div className="card full-width-card">
       <div className="card-header-row">
         <div>
-          <h4>Staff Account Management (FR-1.3)</h4>
-          <p className="subtitle">Create, update roles, reset PINs, and manage active staff</p>
+          <h4>Staff Accounts</h4>
+          <p className="subtitle">Manage team members, roles, and PIN access</p>
         </div>
         <button type="button" className="btn-primary" onClick={openAddModal}>
           + Add New Staff Member

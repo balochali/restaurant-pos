@@ -7,7 +7,6 @@ import UserManagement from "./components/UserManagement";
 import AuditLogViewer from "./components/AuditLogViewer";
 import MenuManagement from "./components/MenuManagement";
 import { PermissionAction } from "./lib/permissions";
-import { logAuditEvent } from "./lib/auditService";
 import "./App.css";
 
 type Tab = "terminal" | "menu" | "users" | "audit";
@@ -15,25 +14,10 @@ type Tab = "terminal" | "menu" | "users" | "audit";
 function TerminalContent() {
   const { user, login, logout, switchUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("terminal");
-  const [testNotification, setTestNotification] = useState<string | null>(null);
 
   if (!user) {
     return <PinLogin onLogin={login} />;
   }
-
-  const handleSensitiveActionTest = async (action: PermissionAction, label: string) => {
-    if (!user) return;
-
-    await logAuditEvent({
-      userId: user.id,
-      actionType: action.toUpperCase(),
-      entityAffected: "Order #1001",
-      reason: `Test sensitive action: ${label}`,
-      metadata: { action, performedBy: user.username, role: user.role },
-    });
-
-    setTestNotification(`Recorded audit log entry for "${label}"!`);
-  };
 
   const actionsToTest: { action: PermissionAction; label: string }[] = [
     { action: "create_order", label: "Create Order" },
@@ -84,7 +68,7 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "menu" ? "active" : ""}`}
             onClick={() => setActiveTab("menu")}
           >
-            📋 Menu Management (FR-2.1→2.5)
+            📋 Menu Manager
           </button>
         </PermissionGate>
 
@@ -94,7 +78,7 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "users" ? "active" : ""}`}
             onClick={() => setActiveTab("users")}
           >
-            👥 Staff Accounts (FR-1.3)
+            👥 Staff Accounts
           </button>
         </PermissionGate>
 
@@ -104,7 +88,7 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "audit" ? "active" : ""}`}
             onClick={() => setActiveTab("audit")}
           >
-            📜 Audit Logs (FR-1.4)
+            📜 Activity Logs
           </button>
         </PermissionGate>
       </nav>
@@ -154,57 +138,85 @@ function TerminalContent() {
 
       {activeTab === "terminal" && (
         <main className="dashboard-content">
-          {testNotification && (
-            <div
-              className="success-banner full-width-card"
-              onClick={() => setTestNotification(null)}
-            >
-              ✅ {testNotification} (Click to dismiss)
-            </div>
-          )}
 
-          <section className="card">
-            <h4>Active Staff Profile</h4>
-            <p>
-              <strong>Name:</strong> {user.name}
-            </p>
-            <p>
-              <strong>Username:</strong> <code>{user.username}</code>
-            </p>
-            <p>
-              <strong>Assigned Role:</strong>{" "}
-              <span className={`role-pill role-${user.role}`}>{user.role}</span>
-            </p>
-            <p>
-              <strong>Account ID:</strong> <code style={{ fontSize: "11px" }}>{user.id}</code>
-            </p>
+          {/* Welcome Card */}
+          <section className="card full-width-card" style={{ background: "linear-gradient(135deg, #fff8f3 0%, #fdf3ec 100%)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+              <div>
+                <h4 style={{ fontSize: "22px", marginBottom: "6px" }}>
+                  👋 Welcome back, {user.name.split(" ")[0]}!
+                </h4>
+                <p className="subtitle" style={{ fontSize: "14px" }}>
+                  You're signed in as <strong>{user.username}</strong> with{" "}
+                  <span className={`role-pill role-${user.role}`}>{user.role}</span>{" "}
+                  access. Use the menu above to navigate.
+                </p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>Account ID</div>
+                <code style={{ fontSize: "11px", color: "var(--text-secondary)", wordBreak: "break-all" }}>{user.id.slice(0, 18)}…</code>
+              </div>
+            </div>
           </section>
 
-          <section className="card">
-            <h4>Role Permission Matrix & Sensitive Actions (T-019 / T-021)</h4>
+          {/* Quick Navigation */}
+          <section className="card full-width-card">
+            <h4 style={{ marginBottom: "16px" }}>Quick Navigation</h4>
+            <div className="quick-link-grid">
+              <PermissionGate action="manage_menu">
+                <button type="button" className="quick-link-card" onClick={() => setActiveTab("menu")}>
+                  <span className="quick-link-icon">📋</span>
+                  <div className="quick-link-text">
+                    <strong>Menu Manager</strong>
+                    <small>Items, categories, combos & variants</small>
+                  </div>
+                </button>
+              </PermissionGate>
+              <PermissionGate action="manage_users">
+                <button type="button" className="quick-link-card" onClick={() => setActiveTab("users")}>
+                  <span className="quick-link-icon">👥</span>
+                  <div className="quick-link-text">
+                    <strong>Staff Accounts</strong>
+                    <small>Add or manage team members</small>
+                  </div>
+                </button>
+              </PermissionGate>
+              <PermissionGate action="view_reports">
+                <button type="button" className="quick-link-card" onClick={() => setActiveTab("audit")}>
+                  <span className="quick-link-icon">📜</span>
+                  <div className="quick-link-text">
+                    <strong>Activity Logs</strong>
+                    <small>Review all system events</small>
+                  </div>
+                </button>
+              </PermissionGate>
+            </div>
+          </section>
+
+          {/* Permissions Summary */}
+          <section className="card full-width-card">
+            <h4 style={{ marginBottom: "4px" }}>Your Permissions</h4>
             <p className="subtitle" style={{ marginBottom: "16px" }}>
-              Clicking an allowed button executes the action and creates a live entry in local{" "}
-              <code>audit_log</code>.
+              Actions available to your <span className={`role-pill role-${user.role}`}>{user.role}</span> role.
             </p>
             <div className="permission-grid">
               {actionsToTest.map(({ action, label }) => (
                 <div key={action} className="action-item">
-                  <span>{label}</span>
+                  <span style={{ fontWeight: 600, fontSize: "14px" }}>{label}</span>
                   <PermissionGate
                     action={action}
                     fallback={
-                      <span style={{ color: "#ef4444", fontSize: "13px", fontWeight: "600" }}>
-                        🔒 Restricted
+                      <span style={{ color: "#9ca3af", fontSize: "13px" }}>
+                        🔒 Not allowed
                       </span>
                     }
                   >
                     <button
                       type="button"
-                      className="btn-primary"
-                      style={{ padding: "6px 12px", fontSize: "12px" }}
-                      onClick={() => handleSensitiveActionTest(action, label)}
+                      className="btn-success btn-sm"
+                      style={{ cursor: "default" }}
                     >
-                      ⚡ Execute & Log
+                      ✓ Allowed
                     </button>
                   </PermissionGate>
                 </div>

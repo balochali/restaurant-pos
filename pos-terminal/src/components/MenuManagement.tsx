@@ -410,6 +410,8 @@ export default function MenuManagement() {
     }
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const inStockCount = items.filter((i) => i.is_available === 1).length;
   const soldOutCount = items.filter((i) => i.is_available === 0).length;
 
@@ -423,6 +425,12 @@ export default function MenuManagement() {
     if (availabilityFilter === "SOLD_OUT" && item.is_available !== 0) {
       return false;
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = item.name.toLowerCase().includes(q);
+      const matchDesc = item.description?.toLowerCase().includes(q) || false;
+      if (!matchName && !matchDesc) return false;
+    }
     return true;
   });
 
@@ -430,8 +438,40 @@ export default function MenuManagement() {
     <div className="card full-width-card">
       <div className="card-header-row">
         <div>
-          <h4>Menu Management System (FR-2.1 → FR-2.5)</h4>
-          <p className="subtitle">Categories, Menu Items, Variants, Modifiers, and Combo Builder</p>
+          <h4>Menu & Catalog Manager</h4>
+          <p className="subtitle">Manage items, categories, variants, add-ons, and combo bundles</p>
+        </div>
+      </div>
+
+      {/* Metrics Summary Widgets */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">🍔</div>
+          <div>
+            <div className="stat-value">{items.length}</div>
+            <div className="stat-label">Total Items</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">📂</div>
+          <div>
+            <div className="stat-value">{categories.length}</div>
+            <div className="stat-label">Categories</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon">✅</div>
+          <div>
+            <div className="stat-value">{inStockCount}</div>
+            <div className="stat-label">In Stock</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon stat-danger">🚫</div>
+          <div>
+            <div className="stat-value stat-value-danger">{soldOutCount}</div>
+            <div className="stat-label">86'd / Sold Out</div>
+          </div>
         </div>
       </div>
 
@@ -453,28 +493,28 @@ export default function MenuManagement() {
           className={`sub-nav-tab ${activeTab === "items" ? "active" : ""}`}
           onClick={() => setActiveTab("items")}
         >
-          🍔 Menu Items (FR-2.2)
+          🍔 Menu Items
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "categories" ? "active" : ""}`}
           onClick={() => setActiveTab("categories")}
         >
-          📂 Categories (FR-2.1)
+          📂 Categories
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "variants_modifiers" ? "active" : ""}`}
           onClick={() => setActiveTab("variants_modifiers")}
         >
-          📏 Variants & Modifiers (FR-2.3 & 2.4)
+          📏 Variants & Add-ons
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "combos" ? "active" : ""}`}
           onClick={() => setActiveTab("combos")}
         >
-          🎁 Combo Builder (FR-2.5)
+          🎁 Combo Bundles
         </button>
       </div>
 
@@ -489,6 +529,22 @@ export default function MenuManagement() {
             <div>
               <div className="card-header-row" style={{ marginTop: "16px" }}>
                 <div className="filter-controls">
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="🔍 Search items..."
+                      style={{
+                        padding: "7px 12px",
+                        borderRadius: "10px",
+                        border: "1.5px solid var(--border-medium)",
+                        fontSize: "13px",
+                        width: "180px",
+                      }}
+                    />
+                  </div>
+
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
                       Category:

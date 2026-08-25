@@ -79,8 +79,8 @@ export default function AuditLogViewer() {
     <div className="card full-width-card">
       <div className="card-header-row">
         <div>
-          <h4>Audit Trail Logs (FR-1.4, NFR-3.3)</h4>
-          <p className="subtitle">Real-time log of sensitive staff actions and security events</p>
+          <h4>Activity Logs</h4>
+          <p className="subtitle">A real-time trail of all staff actions and system events</p>
         </div>
 
         <div className="filter-controls">
@@ -99,9 +99,9 @@ export default function AuditLogViewer() {
       </div>
 
       {loading ? (
-        <p>Loading audit logs...</p>
+        <p style={{ padding: "24px", color: "var(--text-muted)" }}>⏳ Loading activity logs...</p>
       ) : filteredLogs.length === 0 ? (
-        <p className="no-logs">No audit log entries found matching filter.</p>
+        <p className="no-logs">📭 No events found for the selected filter.</p>
       ) : (
         <div className="table-responsive">
           <table className="audit-table">
