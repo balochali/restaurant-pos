@@ -58,13 +58,22 @@ async function runMigrations(database: Database): Promise<void> {
 
   await database.execute(`
     CREATE TABLE IF NOT EXISTS menu_categories (
-      id            TEXT PRIMARY KEY,
-      name          TEXT NOT NULL,
-      display_order INTEGER NOT NULL DEFAULT 0,
-      is_active     INTEGER NOT NULL DEFAULT 1,
-      synced_at     TEXT
+      id              TEXT PRIMARY KEY,
+      name            TEXT NOT NULL,
+      display_order   INTEGER NOT NULL DEFAULT 0,
+      is_active       INTEGER NOT NULL DEFAULT 1,
+      available_from  TEXT,
+      available_until TEXT,
+      synced_at       TEXT
     )
   `);
+
+  try {
+    await database.execute(`ALTER TABLE menu_categories ADD COLUMN available_from TEXT`);
+  } catch {}
+  try {
+    await database.execute(`ALTER TABLE menu_categories ADD COLUMN available_until TEXT`);
+  } catch {}
 
   // ============================================================
   // MENU ITEMS

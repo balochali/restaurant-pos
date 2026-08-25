@@ -23,6 +23,7 @@ import {
   getComboComponents,
   saveComboComponents,
   isItemInTimeWindow,
+  isCategoryInTimeWindow,
 } from "../lib/menuService";
 import { useAuth } from "../store/useAuth";
 
@@ -76,9 +77,11 @@ export default function MenuManagement() {
     };
   }, []);
 
-  // ─── T-022: CATEGORIES STATE & HANDLERS ──────────────────────────────────
+  // ─── T-022 & T-028: CATEGORIES STATE & HANDLERS ──────────────────────────
   const [catName, setCatName] = useState("");
   const [catIsActive, setCatIsActive] = useState<number>(1);
+  const [catFrom, setCatFrom] = useState("");
+  const [catUntil, setCatUntil] = useState("");
   const [editingCategory, setEditingCategory] = useState<DbCategory | null>(null);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
 
@@ -93,18 +96,34 @@ export default function MenuManagement() {
           catName,
           catIsActive,
           currentUser.id,
+          catFrom.trim() || undefined,
+          catUntil.trim() || undefined,
         );
         setSuccess(`Category "${catName}" updated.`);
       } else {
-        const newCat = await createCategory(catName, currentUser.id);
+        const newCat = await createCategory(
+          catName,
+          currentUser.id,
+          catFrom.trim() || undefined,
+          catUntil.trim() || undefined,
+        );
         if (catIsActive === 0) {
-          await updateCategory(newCat.id, newCat.name, 0, currentUser.id);
+          await updateCategory(
+            newCat.id,
+            newCat.name,
+            0,
+            currentUser.id,
+            catFrom.trim() || undefined,
+            catUntil.trim() || undefined,
+          );
         }
         setSuccess(`Category "${catName}" created.`);
       }
       setIsCatModalOpen(false);
       setCatName("");
       setCatIsActive(1);
+      setCatFrom("");
+      setCatUntil("");
       setEditingCategory(null);
       refreshAllData();
     } catch (err) {
@@ -155,8 +174,9 @@ export default function MenuManagement() {
     }
   };
 
-  // ─── T-023: MENU ITEMS STATE & HANDLERS ───────────────────────────────────
+  // ─── T-023 & T-027: MENU ITEMS STATE & HANDLERS ───────────────────────────
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("ALL");
+  const [availabilityFilter, setAvailabilityFilter] = useState<"ALL" | "IN_STOCK" | "SOLD_OUT">("ALL");
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<DbMenuItem | null>(null);
 
@@ -390,9 +410,20 @@ export default function MenuManagement() {
     }
   };
 
+  const inStockCount = items.filter((i) => i.is_available === 1).length;
+  const soldOutCount = items.filter((i) => i.is_available === 0).length;
+
   const filteredMenuItems = items.filter((item) => {
-    if (selectedCategoryFilter === "ALL") return true;
-    return item.category_id === selectedCategoryFilter;
+    if (selectedCategoryFilter !== "ALL" && item.category_id !== selectedCategoryFilter) {
+      return false;
+    }
+    if (availabilityFilter === "IN_STOCK" && item.is_available !== 1) {
+      return false;
+    }
+    if (availabilityFilter === "SOLD_OUT" && item.is_available !== 0) {
+      return false;
+    }
+    return true;
   });
 
   return (
@@ -458,20 +489,36 @@ export default function MenuManagement() {
             <div>
               <div className="card-header-row" style={{ marginTop: "16px" }}>
                 <div className="filter-controls">
-                  <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                    Category Filter:
-                  </label>
-                  <select
-                    value={selectedCategoryFilter}
-                    onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                  >
-                    <option value="ALL">All Categories ({items.length})</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                      Category:
+                    </label>
+                    <select
+                      value={selectedCategoryFilter}
+                      onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                    >
+                      <option value="ALL">All Categories ({items.length})</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                      Stock Status:
+                    </label>
+                    <select
+                      value={availabilityFilter}
+                      onChange={(e) => setAvailabilityFilter(e.target.value as "ALL" | "IN_STOCK" | "SOLD_OUT")}
+                    >
+                      <option value="ALL">All Statuses ({items.length})</option>
+                      <option value="IN_STOCK">In Stock Only ({inStockCount})</option>
+                      <option value="SOLD_OUT">86'd / Sold Out Only ({soldOutCount})</option>
+                    </select>
+                  </div>
                 </div>
 
                 <button type="button" className="btn-primary" onClick={openAddItemModal}>
@@ -577,6 +624,8 @@ export default function MenuManagement() {
                     setEditingCategory(null);
                     setCatName("");
                     setCatIsActive(1);
+                    setCatFrom("");
+                    setCatUntil("");
                     setIsCatModalOpen(true);
                   }}
                 >
@@ -590,6 +639,7 @@ export default function MenuManagement() {
                     <tr>
                       <th>Display Order</th>
                       <th>Category Name</th>
+                      <th>Time Window (FR-2.7)</th>
                       <th>Status</th>
                       <th>Reorder</th>
                       <th>Actions</th>
@@ -603,6 +653,23 @@ export default function MenuManagement() {
                         </td>
                         <td>
                           <strong>{cat.name}</strong>
+                        </td>
+                        <td>
+                          {cat.available_from && cat.available_until ? (
+                            <span
+                              className="combo-badge"
+                              style={{
+                                backgroundColor: isCategoryInTimeWindow(cat) ? "#059669" : "#d97706",
+                              }}
+                            >
+                              ⏰ {cat.available_from} – {cat.available_until}
+                              {!isCategoryInTimeWindow(cat) && " (Closed)"}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                              All Day (24/7)
+                            </span>
+                          )}
                         </td>
                         <td>
                           <span
@@ -647,6 +714,8 @@ export default function MenuManagement() {
                                 setEditingCategory(cat);
                                 setCatName(cat.name);
                                 setCatIsActive(cat.is_active);
+                                setCatFrom(cat.available_from || "");
+                                setCatUntil(cat.available_until || "");
                                 setIsCatModalOpen(true);
                               }}
                             >
@@ -1029,6 +1098,26 @@ export default function MenuManagement() {
                   <option value={1}>Active</option>
                   <option value={0}>Disabled</option>
                 </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                <div className="form-group">
+                  <label>Available From Time (optional - e.g. 06:00)</label>
+                  <input
+                    type="time"
+                    value={catFrom}
+                    onChange={(e) => setCatFrom(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Available Until Time (optional - e.g. 11:00)</label>
+                  <input
+                    type="time"
+                    value={catUntil}
+                    onChange={(e) => setCatUntil(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="modal-actions">

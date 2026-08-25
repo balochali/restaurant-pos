@@ -6,6 +6,8 @@ export interface DbCategory {
   name: string;
   display_order: number;
   is_active: number;
+  available_from?: string | null;
+  available_until?: string | null;
   synced_at: string | null;
 }
 
@@ -155,11 +157,16 @@ export async function getCategories(): Promise<DbCategory[]> {
   await ensureInitialMenuData();
   const db = await getDb();
   return db.select<DbCategory[]>(
-    "SELECT id, name, display_order, is_active, synced_at FROM menu_categories ORDER BY display_order ASC, name ASC",
+    "SELECT id, name, display_order, is_active, available_from, available_until, synced_at FROM menu_categories ORDER BY display_order ASC, name ASC",
   );
 }
 
-export async function createCategory(name: string, performedByUserId: string): Promise<DbCategory> {
+export async function createCategory(
+  name: string,
+  performedByUserId: string,
+  availableFrom?: string | null,
+  availableUntil?: string | null,
+): Promise<DbCategory> {
   const db = await getDb();
   const id = crypto.randomUUID();
 
@@ -170,8 +177,8 @@ export async function createCategory(name: string, performedByUserId: string): P
   const nextOrder = (maxRes[0]?.maxOrder || 0) + 1;
 
   await db.execute(
-    "INSERT INTO menu_categories (id, name, display_order, is_active) VALUES (?, ?, ?, 1)",
-    [id, name.trim(), nextOrder],
+    "INSERT INTO menu_categories (id, name, display_order, is_active, available_from, available_until) VALUES (?, ?, ?, 1, ?, ?)",
+    [id, name.trim(), nextOrder, availableFrom || null, availableUntil || null],
   );
 
   await logAuditEvent({
@@ -181,7 +188,15 @@ export async function createCategory(name: string, performedByUserId: string): P
     reason: "New menu category created",
   });
 
-  return { id, name: name.trim(), display_order: nextOrder, is_active: 1, synced_at: null };
+  return {
+    id,
+    name: name.trim(),
+    display_order: nextOrder,
+    is_active: 1,
+    available_from: availableFrom || null,
+    available_until: availableUntil || null,
+    synced_at: null,
+  };
 }
 
 export async function updateCategory(
@@ -189,13 +204,14 @@ export async function updateCategory(
   name: string,
   isActive: number,
   performedByUserId: string,
+  availableFrom?: string | null,
+  availableUntil?: string | null,
 ): Promise<void> {
   const db = await getDb();
-  await db.execute("UPDATE menu_categories SET name = ?, is_active = ? WHERE id = ?", [
-    name.trim(),
-    isActive,
-    id,
-  ]);
+  await db.execute(
+    "UPDATE menu_categories SET name = ?, is_active = ?, available_from = ?, available_until = ? WHERE id = ?",
+    [name.trim(), isActive, availableFrom || null, availableUntil || null, id],
+  );
 
   await logAuditEvent({
     userId: performedByUserId,
@@ -203,6 +219,26 @@ export async function updateCategory(
     entityAffected: `Category:${name}`,
     reason: "Menu category updated",
   });
+}
+
+/**
+ * Checks whether a category's time-based availability window allows ordering at current time.
+ */
+export function isCategoryInTimeWindow(category: DbCategory, timeStr?: string): boolean {
+  if (!category.available_from || !category.available_until) {
+    return true; // No restriction
+  }
+
+  const now = timeStr || new Date().toTimeString().slice(0, 5); // "HH:MM"
+  const from = category.available_from;
+  const until = category.available_until;
+
+  if (from <= until) {
+    return now >= from && now <= until;
+  } else {
+    // Overnight window (e.g. 22:00 to 04:00)
+    return now >= from || now <= until;
+  }
 }
 
 export async function deleteCategory(id: string, performedByUserId: string): Promise<void> {
