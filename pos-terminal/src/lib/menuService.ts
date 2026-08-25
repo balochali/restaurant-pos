@@ -106,10 +106,17 @@ export async function ensureInitialMenuData(): Promise<void> {
   // Drink Variants (T-024)
   await db.execute(
     `INSERT INTO item_variants (id, menu_item_id, name, price, is_active) VALUES
-     (crypto_uuid(), ?, 'Small (12oz)', 1.99, 1),
-     (crypto_uuid(), ?, 'Medium (16oz)', 2.99, 1),
-     (crypto_uuid(), ?, 'Large (24oz)', 3.99, 1)`,
-    [itemCoke, itemCoke, itemCoke],
+     (?, ?, 'Small (12oz)', 1.99, 1),
+     (?, ?, 'Medium (16oz)', 2.99, 1),
+     (?, ?, 'Large (24oz)', 3.99, 1)`,
+    [
+      crypto.randomUUID(),
+      itemCoke,
+      crypto.randomUUID(),
+      itemCoke,
+      crypto.randomUUID(),
+      itemCoke,
+    ],
   );
 
   // Modifiers (T-025)

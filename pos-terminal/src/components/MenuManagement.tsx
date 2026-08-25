@@ -77,6 +77,7 @@ export default function MenuManagement() {
 
   // ─── T-022: CATEGORIES STATE & HANDLERS ──────────────────────────────────
   const [catName, setCatName] = useState("");
+  const [catIsActive, setCatIsActive] = useState<number>(1);
   const [editingCategory, setEditingCategory] = useState<DbCategory | null>(null);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
 
@@ -89,20 +90,36 @@ export default function MenuManagement() {
         await updateCategory(
           editingCategory.id,
           catName,
-          editingCategory.is_active,
+          catIsActive,
           currentUser.id,
         );
         setSuccess(`Category "${catName}" updated.`);
       } else {
-        await createCategory(catName, currentUser.id);
+        const newCat = await createCategory(catName, currentUser.id);
+        if (catIsActive === 0) {
+          await updateCategory(newCat.id, newCat.name, 0, currentUser.id);
+        }
         setSuccess(`Category "${catName}" created.`);
       }
       setIsCatModalOpen(false);
       setCatName("");
+      setCatIsActive(1);
       setEditingCategory(null);
       refreshAllData();
     } catch (err) {
       setError(String(err));
+    }
+  };
+
+  const handleToggleCategoryStatus = async (category: DbCategory) => {
+    if (!currentUser) return;
+    try {
+      const newStatus = category.is_active === 1 ? 0 : 1;
+      await updateCategory(category.id, category.name, newStatus, currentUser.id);
+      setSuccess(`Category "${category.name}" ${newStatus === 1 ? "activated" : "disabled"}.`);
+      refreshAllData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -508,6 +525,7 @@ export default function MenuManagement() {
                   onClick={() => {
                     setEditingCategory(null);
                     setCatName("");
+                    setCatIsActive(1);
                     setIsCatModalOpen(true);
                   }}
                 >
@@ -566,10 +584,18 @@ export default function MenuManagement() {
                           <div className="action-buttons">
                             <button
                               type="button"
+                              className={`btn-sm ${cat.is_active === 1 ? "btn-warning" : "btn-success"}`}
+                              onClick={() => handleToggleCategoryStatus(cat)}
+                            >
+                              {cat.is_active === 1 ? "Disable" : "Activate"}
+                            </button>
+                            <button
+                              type="button"
                               className="btn-secondary btn-sm"
                               onClick={() => {
                                 setEditingCategory(cat);
                                 setCatName(cat.name);
+                                setCatIsActive(cat.is_active);
                                 setIsCatModalOpen(true);
                               }}
                             >
@@ -836,6 +862,18 @@ export default function MenuManagement() {
                   required
                 />
               </div>
+
+              <div className="form-group">
+                <label>Status</label>
+                <select
+                  value={catIsActive}
+                  onChange={(e) => setCatIsActive(parseInt(e.target.value))}
+                >
+                  <option value={1}>Active</option>
+                  <option value={0}>Disabled</option>
+                </select>
+              </div>
+
               <div className="modal-actions">
                 <button
                   type="button"
