@@ -319,5 +319,52 @@ async function runMigrations(database: Database): Promise<void> {
     )
   `);
 
+  // ============================================================
+  // INDEXES FOR ORDERS (T-029 / T-033 performance)
+  // ============================================================
+
+  await database.execute(`
+    CREATE INDEX IF NOT EXISTS idx_orders_status   ON orders(status)
+  `);
+  await database.execute(`
+    CREATE INDEX IF NOT EXISTS idx_orders_table_id ON orders(table_id)
+  `);
+  await database.execute(`
+    CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)
+  `);
+
+  // ============================================================
+  // SEED: DEMO TABLES (T-029 floor plan)
+  // Idempotent — only inserts if tables table is empty.
+  // ============================================================
+
+  const tableCount = await database.select<{ c: number }[]> (
+    "SELECT COUNT(*) as c FROM tables"
+  );
+
+  if (tableCount[0].c === 0) {
+    const sections = [
+      { number: "T1",  section: "Main Hall",  capacity: 2 },
+      { number: "T2",  section: "Main Hall",  capacity: 4 },
+      { number: "T3",  section: "Main Hall",  capacity: 4 },
+      { number: "T4",  section: "Main Hall",  capacity: 6 },
+      { number: "T5",  section: "Main Hall",  capacity: 6 },
+      { number: "T6",  section: "Terrace",    capacity: 2 },
+      { number: "T7",  section: "Terrace",    capacity: 4 },
+      { number: "T8",  section: "Terrace",    capacity: 4 },
+      { number: "T9",  section: "Private",    capacity: 8 },
+      { number: "T10", section: "Private",    capacity: 10 },
+    ];
+
+    for (const t of sections) {
+      const tid = crypto.randomUUID();
+      await database.execute(
+        "INSERT INTO tables (id, number, section, capacity, status) VALUES (?, ?, ?, ?, 'FREE')",
+        [tid, t.number, t.section, t.capacity]
+      );
+    }
+    console.log("[db] Seeded 10 demo tables.");
+  }
+
   console.log("[db] SQLite migrations completed successfully");
 }

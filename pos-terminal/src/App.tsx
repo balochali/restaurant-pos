@@ -6,10 +6,11 @@ import PermissionGate from "./components/PermissionGate";
 import UserManagement from "./components/UserManagement";
 import AuditLogViewer from "./components/AuditLogViewer";
 import MenuManagement from "./components/MenuManagement";
+import OrderManagement from "./components/OrderManagement";
 import { PermissionAction } from "./lib/permissions";
 import "./App.css";
 
-type Tab = "terminal" | "menu" | "users" | "audit";
+type Tab = "terminal" | "orders" | "menu" | "users" | "audit";
 
 function TerminalContent() {
   const { user, login, logout, switchUser } = useAuth();
@@ -62,6 +63,16 @@ function TerminalContent() {
           🖥️ Terminal Home
         </button>
 
+        <PermissionGate action="create_order">
+          <button
+            type="button"
+            className={`nav-tab ${activeTab === "orders" ? "active" : ""}`}
+            onClick={() => setActiveTab("orders")}
+          >
+            🛒 Orders & Tables
+          </button>
+        </PermissionGate>
+
         <PermissionGate action="manage_menu">
           <button
             type="button"
@@ -94,6 +105,20 @@ function TerminalContent() {
       </nav>
 
       {/* Tab Contents */}
+      {activeTab === "orders" && (
+        <PermissionGate
+          action="create_order"
+          fallback={
+            <div className="card">
+              <h4>Access Restricted</h4>
+              <p>You need permission to access Order Management.</p>
+            </div>
+          }
+        >
+          <OrderManagement />
+        </PermissionGate>
+      )}
+
       {activeTab === "menu" && (
         <PermissionGate
           action="manage_menu"
@@ -163,6 +188,15 @@ function TerminalContent() {
           <section className="card full-width-card">
             <h4 style={{ marginBottom: "16px" }}>Quick Navigation</h4>
             <div className="quick-link-grid">
+              <PermissionGate action="create_order">
+                <button type="button" className="quick-link-card" onClick={() => setActiveTab("orders")}>
+                  <span className="quick-link-icon">🛒</span>
+                  <div className="quick-link-text">
+                    <strong>New Order & Tables</strong>
+                    <small>Create orders, manage tables & cart</small>
+                  </div>
+                </button>
+              </PermissionGate>
               <PermissionGate action="manage_menu">
                 <button type="button" className="quick-link-card" onClick={() => setActiveTab("menu")}>
                   <span className="quick-link-icon">📋</span>
