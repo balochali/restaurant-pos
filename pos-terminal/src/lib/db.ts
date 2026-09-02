@@ -199,14 +199,31 @@ async function runMigrations(database: Database): Promise<void> {
 
   await database.execute(`
     CREATE TABLE IF NOT EXISTS tables (
-      id        TEXT PRIMARY KEY,
-      number    TEXT NOT NULL UNIQUE,
-      section   TEXT,
-      capacity  INTEGER NOT NULL,
-      status    TEXT NOT NULL DEFAULT 'FREE',
-      synced_at TEXT
+      id                 TEXT PRIMARY KEY,
+      number             TEXT NOT NULL UNIQUE,
+      section            TEXT,
+      capacity           INTEGER NOT NULL,
+      status             TEXT NOT NULL DEFAULT 'FREE',
+      pos_x              INTEGER NOT NULL DEFAULT 0,
+      pos_y              INTEGER NOT NULL DEFAULT 0,
+      shape              TEXT NOT NULL DEFAULT 'RECTANGLE',
+      assigned_waiter_id TEXT,
+      synced_at          TEXT
     )
   `);
+
+  try {
+    await database.execute(`ALTER TABLE tables ADD COLUMN pos_x INTEGER NOT NULL DEFAULT 0`);
+  } catch {}
+  try {
+    await database.execute(`ALTER TABLE tables ADD COLUMN pos_y INTEGER NOT NULL DEFAULT 0`);
+  } catch {}
+  try {
+    await database.execute(`ALTER TABLE tables ADD COLUMN shape TEXT NOT NULL DEFAULT 'RECTANGLE'`);
+  } catch {}
+  try {
+    await database.execute(`ALTER TABLE tables ADD COLUMN assigned_waiter_id TEXT`);
+  } catch {}
 
   // ============================================================
   // ORDERS

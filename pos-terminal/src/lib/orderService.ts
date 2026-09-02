@@ -22,7 +22,7 @@ export interface DbTable {
   number: string;
   section: string | null;
   capacity: number;
-  status: "FREE" | "OCCUPIED" | "RESERVED";
+  status: "FREE" | "OCCUPIED" | "RESERVED" | "NEEDS_CLEANING";
 }
 
 export interface DbOrder {
@@ -316,7 +316,7 @@ export async function advanceOrderStatus(orderId: string, userId: string): Promi
   await db.execute("UPDATE orders SET status = ? WHERE id = ?", [next, orderId]);
 
   if (next === "SERVED" && order.table_id) {
-    await updateTableStatus(order.table_id, "FREE");
+    await updateTableStatus(order.table_id, "NEEDS_CLEANING");
   }
 
   await logAuditEvent({

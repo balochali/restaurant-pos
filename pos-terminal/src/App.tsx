@@ -7,10 +7,11 @@ import UserManagement from "./components/UserManagement";
 import AuditLogViewer from "./components/AuditLogViewer";
 import MenuManagement from "./components/MenuManagement";
 import OrderManagement from "./components/OrderManagement";
+import TableManagement from "./components/TableManagement";
 import { PermissionAction } from "./lib/permissions";
 import "./App.css";
 
-type Tab = "terminal" | "orders" | "menu" | "users" | "audit";
+type Tab = "terminal" | "orders" | "tables" | "menu" | "users" | "audit";
 
 function TerminalContent() {
   const { user, login, logout, switchUser } = useAuth();
@@ -69,9 +70,17 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "orders" ? "active" : ""}`}
             onClick={() => setActiveTab("orders")}
           >
-            🛒 Orders & Tables
+            🛒 Orders
           </button>
         </PermissionGate>
+
+        <button
+          type="button"
+          className={`nav-tab ${activeTab === "tables" ? "active" : ""}`}
+          onClick={() => setActiveTab("tables")}
+        >
+          🪑 Floor Plan
+        </button>
 
         <PermissionGate action="manage_menu">
           <button
@@ -118,6 +127,8 @@ function TerminalContent() {
           <OrderManagement />
         </PermissionGate>
       )}
+
+      {activeTab === "tables" && <TableManagement />}
 
       {activeTab === "menu" && (
         <PermissionGate
@@ -192,11 +203,18 @@ function TerminalContent() {
                 <button type="button" className="quick-link-card" onClick={() => setActiveTab("orders")}>
                   <span className="quick-link-icon">🛒</span>
                   <div className="quick-link-text">
-                    <strong>New Order & Tables</strong>
-                    <small>Create orders, manage tables & cart</small>
+                    <strong>New Order & Cart</strong>
+                    <small>Create orders, items & kitchen dispatch</small>
                   </div>
                 </button>
               </PermissionGate>
+              <button type="button" className="quick-link-card" onClick={() => setActiveTab("tables")}>
+                <span className="quick-link-icon">🪑</span>
+                <div className="quick-link-text">
+                  <strong>Floor Plan & Tables</strong>
+                  <small>Live table map, builder & staff assignments</small>
+                </div>
+              </button>
               <PermissionGate action="manage_menu">
                 <button type="button" className="quick-link-card" onClick={() => setActiveTab("menu")}>
                   <span className="quick-link-icon">📋</span>
