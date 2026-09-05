@@ -20,6 +20,7 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_FLOW,
   REOPEN_WINDOW_MINUTES,
+  processOrderPayment,
 } from "../lib/orderService";
 import {
   DbCategory,
@@ -34,6 +35,8 @@ import {
   isItemInTimeWindow,
 } from "../lib/menuService";
 import { useAuth } from "../store/useAuth";
+import ReceiptModal from "./ReceiptModal";
+import { ReceiptData } from "../lib/receiptService";
 
 interface CartDraftItem {
   menuItem: DbMenuItem;
@@ -44,7 +47,12 @@ interface CartDraftItem {
   unitPrice: number;
 }
 
-export default function OrderManagement() {
+interface OrderManagementProps {
+  initialTableId?: string;
+  onSwitchToTables?: () => void;
+}
+
+export default function OrderManagement({ initialTableId, onSwitchToTables }: OrderManagementProps = {}) {
   const { user: currentUser } = useAuth();
 
   // Navigation Subtabs
@@ -65,7 +73,7 @@ export default function OrderManagement() {
 
   // ─── T-029: New Order Creation State ──────────────────────────────────────
   const [orderSource, setOrderSource] = useState<OrderSource>("DINE_IN");
-  const [selectedTableId, setSelectedTableId] = useState<string>("");
+  const [selectedTableId, setSelectedTableId] = useState<string>(initialTableId || "");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
@@ -90,6 +98,18 @@ export default function OrderManagement() {
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<DbOrder | null>(null);
   const [orderDetailsItems, setOrderDetailsItems] = useState<DbOrderItem[]>([]);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  // ─── Receipt Modal State ───────────────────────────────────────────────────
+  const [receiptModalData, setReceiptModalData] = useState<ReceiptData | null>(null);
+  const [receiptModalType, setReceiptModalType] = useState<"CUSTOMER" | "KITCHEN">("CUSTOMER");
+
+  // ─── Payment & Checkout Modal State ────────────────────────────────────────
+  const [paymentModalOrder, setPaymentModalOrder] = useState<DbOrder | null>(null);
+  const [paymentModalItems, setPaymentModalItems] = useState<DbOrderItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD" | "DIGITAL" | "OTHER">("CASH");
+  const [paymentTendered, setPaymentTendered] = useState<number>(0);
+  const [paymentTip, setPaymentTip] = useState<number>(0);
+  const [paymentError, setPaymentError] = useState("");
 
   // ─── T-034: Void Modal State ───────────────────────────────────────────────
   const [voidModalOpen, setVoidModalOpen] = useState(false);
@@ -261,7 +281,7 @@ export default function OrderManagement() {
   const cartTotal = useMemo(() => cartSubtotal + cartTax, [cartSubtotal, cartTax]);
 
   // ─── T-029 / T-031 / T-032: Place Order ────────────────────────────────────
-  const handlePlaceOrder = async (sendDirectToKitchen = false) => {
+  const handlePlaceOrder = async (sendDirectToKitchen = false, printAfter?: "CUSTOMER" | "KITCHEN") => {
     if (!currentUser) return;
     if (cart.length === 0) {
       setError("Please add at least one item to the cart.");
@@ -282,13 +302,15 @@ export default function OrderManagement() {
         notes: orderNotes.trim() || undefined,
       });
 
+      const insertedItems: DbOrderItem[] = [];
       // Insert all cart items
       for (const item of cart) {
-        await addOrderItem(newOrder.id, item.menuItem.id, item.quantity, item.unitPrice, {
+        const added = await addOrderItem(newOrder.id, item.menuItem.id, item.quantity, item.unitPrice, {
           variantId: item.selectedVariant?.id,
           modifiers: item.selectedModifiers.map((m) => m.name),
           notes: item.notes || undefined,
         });
+        insertedItems.push(added);
       }
 
       if (sendDirectToKitchen) {
@@ -298,11 +320,115 @@ export default function OrderManagement() {
         setSuccess(`Order #${newOrder.id.slice(0, 8)} saved successfully! ✅`);
       }
 
+      // If user requested instant printing
+      if (printAfter) {
+        const tableName = newOrder.table_id ? `Table #${tables.find((t) => t.id === newOrder.table_id)?.number || newOrder.table_id}` : "Takeaway";
+        setReceiptModalData({
+          order: newOrder,
+          items: insertedItems.map((i, idx) => ({ ...i, name: cart[idx]?.menuItem.name || "Item" })),
+          tableName,
+          cashierName: currentUser.name,
+        });
+        setReceiptModalType(printAfter);
+      }
+
       clearCart();
       refreshData();
       setActiveSubtab("active_orders");
     } catch (err) {
       setError("Failed to create order: " + String(err));
+    }
+  };
+
+  // ─── Receipt Printing Helpers ──────────────────────────────────────────────
+  const handlePrintCustomerReceipt = async (order: DbOrder) => {
+    try {
+      const items = await getOrderItems(order.id);
+      const tableName = order.table_number ? `Table #${order.table_number}` : order.table_id ? `Table #${order.table_id}` : "Takeaway";
+      setReceiptModalData({
+        order,
+        items,
+        tableName,
+        cashierName: order.created_by_name || currentUser?.name || "Cashier",
+        paymentMethod: "PAID",
+        amountPaid: order.total,
+        changeDue: 0,
+      });
+      setReceiptModalType("CUSTOMER");
+    } catch (err) {
+      setError("Failed to load receipt items: " + String(err));
+    }
+  };
+
+  const handlePrintKitchenTicket = async (order: DbOrder) => {
+    try {
+      const items = await getOrderItems(order.id);
+      const tableName = order.table_number ? `Table #${order.table_number}` : order.table_id ? `Table #${order.table_id}` : "Takeaway";
+      setReceiptModalData({
+        order,
+        items,
+        tableName,
+        cashierName: order.created_by_name || currentUser?.name || "Cashier",
+      });
+      setReceiptModalType("KITCHEN");
+    } catch (err) {
+      setError("Failed to load kitchen ticket items: " + String(err));
+    }
+  };
+
+  // ─── Payment Checkout Modal Helpers ────────────────────────────────────────
+  const handleOpenPayment = async (order: DbOrder) => {
+    try {
+      const items = await getOrderItems(order.id);
+      setPaymentModalOrder(order);
+      setPaymentModalItems(items);
+      setPaymentMethod("CASH");
+      setPaymentTendered(order.total);
+      setPaymentTip(0);
+      setPaymentError("");
+    } catch (err) {
+      setError("Failed to prepare payment checkout: " + String(err));
+    }
+  };
+
+  const handleProcessPaymentSubmit = async () => {
+    if (!currentUser || !paymentModalOrder) return;
+    if (paymentTendered < paymentModalOrder.total) {
+      setPaymentError(`Tendered amount must be at least $${paymentModalOrder.total.toFixed(2)}.`);
+      return;
+    }
+
+    try {
+      const changeDue = Math.max(0, paymentTendered - paymentModalOrder.total);
+      await processOrderPayment(
+        paymentModalOrder.id,
+        paymentMethod,
+        paymentTendered,
+        paymentTip,
+        changeDue,
+        currentUser.id
+      );
+
+      const paidOrder = { ...paymentModalOrder, status: "CLOSED" as any };
+      const tableName = paidOrder.table_number ? `Table #${paidOrder.table_number}` : paidOrder.table_id ? `Table #${paidOrder.table_id}` : "Takeaway";
+
+      // Close payment modal and open receipt modal!
+      setPaymentModalOrder(null);
+      setReceiptModalData({
+        order: paidOrder,
+        items: paymentModalItems,
+        tableName,
+        cashierName: currentUser.name,
+        paymentMethod,
+        amountPaid: paymentTendered,
+        changeDue,
+      });
+      setReceiptModalType("CUSTOMER");
+
+      setSuccess(`Payment for Order #${paidOrder.id.slice(0, 8)} completed successfully! 💳`);
+      refreshData();
+    } catch (err) {
+      setPaymentError(String(err));
     }
   };
 
@@ -565,9 +691,21 @@ export default function OrderManagement() {
               {/* Dine-In Floor Plan */}
               {orderSource === "DINE_IN" && (
                 <div style={{ marginTop: "14px" }}>
-                  <label style={{ fontSize: "13px", fontWeight: "600", display: "block", marginBottom: "8px" }}>
-                    Select Table: {selectedTableId ? `Table ${tables.find((t) => t.id === selectedTableId)?.number}` : "None Selected"}
-                  </label>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <label style={{ fontSize: "13px", fontWeight: "600" }}>
+                      Select Table: {selectedTableId ? `Table ${tables.find((t) => t.id === selectedTableId)?.number}` : "None Selected"}
+                    </label>
+                    {onSwitchToTables && (
+                      <button
+                        type="button"
+                        className="btn-secondary btn-sm"
+                        style={{ fontSize: "11px", padding: "3px 8px" }}
+                        onClick={onSwitchToTables}
+                      >
+                        🗺️ View Full Floor Map
+                      </button>
+                    )}
+                  </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: "8px" }}>
                     {tables.map((tbl) => {
                       const isSelected = selectedTableId === tbl.id;
@@ -878,21 +1016,32 @@ export default function OrderManagement() {
                 <button
                   type="button"
                   className="btn-primary"
-                  style={{ width: "100%", padding: "12px", fontWeight: "700" }}
+                  style={{ width: "100%", padding: "12px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
                   disabled={cart.length === 0}
-                  onClick={() => handlePlaceOrder(true)}
+                  onClick={() => handlePlaceOrder(true, "KITCHEN")}
                 >
-                  🚀 Send to Kitchen (T-032)
+                  👨‍🍳 Send to Kitchen & Print KOT
                 </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{ width: "100%", padding: "10px" }}
-                  disabled={cart.length === 0}
-                  onClick={() => handlePlaceOrder(false)}
-                >
-                  💾 Save Order
-                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ padding: "9px 6px", fontSize: "12px", fontWeight: "600" }}
+                    disabled={cart.length === 0}
+                    onClick={() => handlePlaceOrder(false, "CUSTOMER")}
+                  >
+                    🧾 Place & Receipt
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ padding: "9px 6px", fontSize: "12px" }}
+                    disabled={cart.length === 0}
+                    onClick={() => handlePlaceOrder(false)}
+                  >
+                    💾 Save Order
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -999,25 +1148,59 @@ export default function OrderManagement() {
                           </span>
                         </td>
                         <td>
-                          <div className="action-buttons">
-                            {nextStatus && (
-                              <button
-                                type="button"
-                                className="btn-success btn-sm"
-                                onClick={() => handleAdvanceStatus(ord)}
-                              >
-                                ➡️ {ORDER_STATUS_LABELS[nextStatus]}
-                              </button>
-                            )}
+                          <div className="action-buttons" style={{ flexWrap: "wrap", gap: "4px" }}>
+                            {/* Fast Checkout / Pay */}
+                            <button
+                              type="button"
+                              className="btn-success btn-sm"
+                              style={{ fontWeight: "bold" }}
+                              onClick={() => handleOpenPayment(ord)}
+                              title="Process Payment & Close"
+                            >
+                              💵 Pay
+                            </button>
+
+                            {/* Print KOT */}
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              onClick={() => handlePrintKitchenTicket(ord)}
+                              title="Print Kitchen Order Ticket"
+                            >
+                              🍳 KOT
+                            </button>
+
+                            {/* Print Customer Receipt */}
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              onClick={() => handlePrintCustomerReceipt(ord)}
+                              title="Print Customer Receipt"
+                            >
+                              🧾 Receipt
+                            </button>
+
                             {ord.status === "OPEN" && (
                               <button
                                 type="button"
                                 className="btn-primary btn-sm"
                                 onClick={() => handleSendToKitchen(ord.id)}
+                                title="Send order items to kitchen"
                               >
                                 👨‍🍳 Send
                               </button>
                             )}
+
+                            {nextStatus && (
+                              <button
+                                type="button"
+                                className="btn-secondary btn-sm"
+                                onClick={() => handleAdvanceStatus(ord)}
+                              >
+                                ➡️ {ORDER_STATUS_LABELS[nextStatus]}
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               className="btn-secondary btn-sm"
@@ -1030,7 +1213,7 @@ export default function OrderManagement() {
                               className="btn-danger btn-sm"
                               onClick={() => openVoidOrderDialog(ord.id)}
                             >
-                              🚫 Void
+                              🚫
                             </button>
                           </div>
                         </td>
@@ -1414,13 +1597,47 @@ export default function OrderManagement() {
               </table>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
-              <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginTop: "16px", borderTop: "1px solid var(--border-color)", paddingTop: "14px" }}>
+              <div style={{ fontSize: "16px" }}>
                 <strong>Total: ${selectedOrderDetails.total.toFixed(2)}</strong>
               </div>
-              <button type="button" className="btn-secondary" onClick={() => setIsDetailsModalOpen(false)}>
-                Close
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => {
+                    handlePrintKitchenTicket(selectedOrderDetails);
+                  }}
+                >
+                  🍳 Print KOT
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => {
+                    handlePrintCustomerReceipt(selectedOrderDetails);
+                  }}
+                >
+                  🧾 Print Receipt
+                </button>
+                {selectedOrderDetails.status !== "CLOSED" && (
+                  <button
+                    type="button"
+                    className="btn-success btn-sm"
+                    style={{ fontWeight: "bold" }}
+                    onClick={() => {
+                      const ord = selectedOrderDetails;
+                      setIsDetailsModalOpen(false);
+                      handleOpenPayment(ord);
+                    }}
+                  >
+                    💵 Pay & Close
+                  </button>
+                )}
+                <button type="button" className="btn-secondary btn-sm" onClick={() => setIsDetailsModalOpen(false)}>
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1477,6 +1694,151 @@ export default function OrderManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 4: PAYMENT & FAST CHECKOUT MODAL                                  */}
+      {/* ─────────────────────────────────────────────────────────────────────── */}
+      {paymentModalOrder && (
+        <div className="modal-backdrop">
+          <div className="modal-content" style={{ maxWidth: "460px" }}>
+            <h3>💵 Checkout & Payment</h3>
+            <p className="subtitle" style={{ marginBottom: "14px" }}>
+              Order #{paymentModalOrder.id.slice(0, 8)} · {paymentModalOrder.order_source}{" "}
+              {paymentModalOrder.table_number ? `(Table ${paymentModalOrder.table_number})` : ""}
+            </p>
+
+            {paymentError && (
+              <div className="pin-error" style={{ marginBottom: "12px" }}>
+                {paymentError}
+              </div>
+            )}
+
+            <div style={{ background: "#f8f9fa", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "4px" }}>
+                <span>Bill Total Due:</span>
+                <span style={{ fontSize: "18px", fontWeight: "bold", color: "var(--accent)" }}>
+                  ${paymentModalOrder.total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: "14px" }}>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold" }}>Payment Method</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                <button
+                  type="button"
+                  className={`btn-secondary ${paymentMethod === "CASH" ? "btn-primary" : ""}`}
+                  style={{ padding: "10px", fontWeight: paymentMethod === "CASH" ? "bold" : "normal" }}
+                  onClick={() => setPaymentMethod("CASH")}
+                >
+                  💵 Cash
+                </button>
+                <button
+                  type="button"
+                  className={`btn-secondary ${paymentMethod === "CARD" ? "btn-primary" : ""}`}
+                  style={{ padding: "10px", fontWeight: paymentMethod === "CARD" ? "bold" : "normal" }}
+                  onClick={() => setPaymentMethod("CARD")}
+                >
+                  💳 Card
+                </button>
+                <button
+                  type="button"
+                  className={`btn-secondary ${paymentMethod === "DIGITAL" ? "btn-primary" : ""}`}
+                  style={{ padding: "10px", fontWeight: paymentMethod === "DIGITAL" ? "bold" : "normal" }}
+                  onClick={() => setPaymentMethod("DIGITAL")}
+                >
+                  📱 Digital / QR
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: "14px" }}>
+              <label style={{ display: "block", marginBottom: "4px", fontWeight: "bold" }}>Amount Tendered ($)</label>
+              <input
+                type="number"
+                step="any"
+                min={paymentModalOrder.total}
+                value={paymentTendered}
+                onChange={(e) => setPaymentTendered(parseFloat(e.target.value) || 0)}
+                style={{ width: "100%", padding: "10px", fontSize: "16px", borderRadius: "6px", border: "1px solid #ccc" }}
+                autoFocus
+              />
+              <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => setPaymentTendered(paymentModalOrder.total)}
+                >
+                  Exact (${paymentModalOrder.total.toFixed(2)})
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => setPaymentTendered(Math.ceil(paymentModalOrder.total / 10) * 10)}
+                >
+                  Round $10
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => setPaymentTendered(Math.ceil(paymentModalOrder.total / 50) * 50 || 50)}
+                >
+                  $50
+                </button>
+              </div>
+            </div>
+
+            {/* Change Due Display */}
+            <div
+              style={{
+                background: paymentTendered >= paymentModalOrder.total ? "#e8f5e9" : "#fff3e0",
+                padding: "12px",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontWeight: "bold" }}>Change Due:</span>
+              <span
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  color: paymentTendered >= paymentModalOrder.total ? "#2e7d32" : "#e65100",
+                }}
+              >
+                ${Math.max(0, paymentTendered - paymentModalOrder.total).toFixed(2)}
+              </span>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-secondary" onClick={() => setPaymentModalOrder(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-success"
+                style={{ padding: "10px 20px", fontWeight: "bold" }}
+                onClick={handleProcessPaymentSubmit}
+              >
+                ✅ Complete & Print Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 5: REUSABLE PRINTABLE RECEIPT MODAL                               */}
+      {/* ─────────────────────────────────────────────────────────────────────── */}
+      {receiptModalData && (
+        <ReceiptModal
+          receiptData={receiptModalData}
+          initialType={receiptModalType}
+          onClose={() => setReceiptModalData(null)}
+        />
       )}
     </div>
   );

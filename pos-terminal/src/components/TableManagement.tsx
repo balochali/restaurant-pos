@@ -18,7 +18,11 @@ import {
 import { DbUser } from "../lib/authService";
 import { useAuth } from "../store/useAuth";
 
-export default function TableManagement() {
+interface TableManagementProps {
+  onSelectTable?: (tableId: string, tableNumber: string) => void;
+}
+
+export default function TableManagement({ onSelectTable }: TableManagementProps = {}) {
   const { user: currentUser } = useAuth();
 
   // Navigation Subtabs
@@ -870,6 +874,32 @@ export default function TableManagement() {
               {selectedTable.section || "Main"} · {selectedTable.capacity} Seats ·{" "}
               Status: <strong style={{ color: "var(--accent)" }}>{selectedTable.status.replace("_", " ")}</strong>
             </p>
+
+            {/* Quick Order Action */}
+            {onSelectTable && (
+              <div style={{ marginBottom: "16px" }}>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    fontSize: "15px",
+                    fontWeight: "bold",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                  }}
+                  onClick={() => {
+                    setIsActionModalOpen(false);
+                    onSelectTable(selectedTable.id, selectedTable.number);
+                  }}
+                >
+                  🛒 {selectedTable.status === "OCCUPIED" ? "View / Add to Order" : `Start Order for ${selectedTable.number}`}
+                </button>
+              </div>
+            )}
 
             {/* Active Order Details */}
             {selectedTable.status === "OCCUPIED" && (

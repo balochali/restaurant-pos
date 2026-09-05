@@ -509,3 +509,44 @@ export async function splitBill(
 
   return newOrderId;
 }
+
+// ─── Payment Processing & Receipt Data ─────────────────────────────────────
+
+export async function processOrderPayment(
+  orderId: string,
+  method: "CASH" | "CARD" | "DIGITAL" | "OTHER",
+  amount: number,
+  tip: number,
+  changeDue: number,
+  userId: string
+): Promise<void> {
+  const db = await getDb();
+  const order = await getOrderById(orderId);
+  if (!order) throw new Error("Order not found.");
+
+  const paymentId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await db.execute(
+    `INSERT INTO payments (id, order_id, method, amount, tip, change_due, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'COMPLETED', ?)`,
+    [paymentId, orderId, method, amount, tip, changeDue, now]
+  );
+
+  // Mark order as CLOSED
+  await db.execute("UPDATE orders SET status = 'CLOSED' WHERE id = ?", [orderId]);
+
+  // If order was tied to a table, update table status to NEEDS_CLEANING or FREE
+  if (order.table_id) {
+    await updateTableStatus(order.table_id, "NEEDS_CLEANING");
+  }
+
+  await logAuditEvent({
+    userId,
+    actionType: "ORDER_PAYMENT",
+    entityAffected: `Order:${orderId}`,
+    reason: `Payment processed: $${amount} via ${method}`,
+    metadata: { paymentId, method, amount, tip, changeDue },
+  });
+}
+
