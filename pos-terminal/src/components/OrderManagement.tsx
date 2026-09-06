@@ -37,6 +37,21 @@ import {
 import { useAuth } from "../store/useAuth";
 import ReceiptModal from "./ReceiptModal";
 import { ReceiptData } from "../lib/receiptService";
+import {
+  IconSearch,
+  IconChef,
+  IconReceipt,
+  IconCash,
+  IconCard,
+  IconQr,
+  IconPlus,
+  IconMinus,
+  IconTrash,
+  IconClose,
+  IconUtensils,
+  IconFilter,
+  IconCheck,
+} from "./Icons";
 
 interface CartDraftItem {
   menuItem: DbMenuItem;
@@ -783,103 +798,99 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             {/* Step 2: Menu Browsing & Search */}
             <div className="sub-card">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "14px" }}>
-                <h5>2. Add Menu Items to Order</h5>
-                <input
-                  type="text"
-                  value={menuSearchQuery}
-                  onChange={(e) => setMenuSearchQuery(e.target.value)}
-                  placeholder="🔍 Search menu..."
-                  style={{
-                    padding: "7px 12px",
-                    borderRadius: "10px",
-                    border: "1.5px solid var(--border-medium)",
-                    fontSize: "13px",
-                    width: "200px",
-                  }}
-                />
+                <h5 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>2. Select Menu Items</h5>
+                <div style={{ position: "relative", width: "220px" }}>
+                  <input
+                    type="text"
+                    value={menuSearchQuery}
+                    onChange={(e) => setMenuSearchQuery(e.target.value)}
+                    placeholder="Search menu..."
+                    style={{
+                      padding: "8px 12px 8px 34px",
+                      borderRadius: "12px",
+                      border: "1.5px solid var(--card-border)",
+                      fontSize: "13px",
+                      width: "100%",
+                      outline: "none",
+                    }}
+                  />
+                  <div style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                    <IconSearch size={16} />
+                  </div>
+                </div>
               </div>
 
               {/* Category Filter Pills */}
-              <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "12px" }}>
+              <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "14px" }}>
                 <button
                   type="button"
                   className={`sub-nav-tab ${selectedCategory === "ALL" ? "active" : ""}`}
-                  style={{ padding: "5px 12px", fontSize: "12px" }}
                   onClick={() => setSelectedCategory("ALL")}
                 >
-                  All ({menuItems.length})
+                  <IconFilter size={14} />
+                  All Items ({menuItems.length})
                 </button>
                 {categories.map((cat) => (
                   <button
                     key={cat.id}
                     type="button"
                     className={`sub-nav-tab ${selectedCategory === cat.id ? "active" : ""}`}
-                    style={{ padding: "5px 12px", fontSize: "12px" }}
                     onClick={() => setSelectedCategory(cat.id)}
                   >
+                    <IconUtensils size={14} />
                     {cat.name}
                   </button>
                 ))}
               </div>
 
               {/* Menu Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "14px" }}>
                 {availableMenuItems.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => handleItemClick(item)}
-                    style={{
-                      padding: "12px",
-                      borderRadius: "14px",
-                      background: "var(--card-bg)",
-                      border: "1.5px solid var(--border-light)",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                    className="menu-item-tile"
+                    className="menu-item-card"
                   >
                     <div>
                       {item.image_url ? (
                         <img
                           src={item.image_url}
                           alt={item.name}
-                          style={{ width: "100%", height: "80px", objectFit: "cover", borderRadius: "8px", marginBottom: "8px" }}
+                          style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "10px", marginBottom: "8px" }}
                         />
                       ) : (
                         <div
                           style={{
                             width: "100%",
-                            height: "60px",
-                            background: "#f7f3ef",
-                            borderRadius: "8px",
+                            height: "70px",
+                            background: "var(--cream-light)",
+                            border: "1px solid var(--cream-border)",
+                            borderRadius: "10px",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "24px",
+                            color: "var(--bordo)",
                             marginBottom: "8px",
                           }}
                         >
-                          🍔
+                          <IconUtensils size={28} />
                         </div>
                       )}
                       <div style={{ fontWeight: "700", fontSize: "14px", color: "var(--text-primary)", marginBottom: "4px" }}>
                         {item.name}
                       </div>
                       {item.description && (
-                        <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.3", marginBottom: "6px" }}>
-                          {item.description.slice(0, 45)}...
+                        <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.3", marginBottom: "8px" }}>
+                          {item.description.slice(0, 48)}...
                         </div>
                       )}
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
-                      <span style={{ fontWeight: "800", color: "var(--accent)", fontSize: "14px" }}>
+                      <span className="item-price-tag">
                         ${item.base_price.toFixed(2)}
                       </span>
-                      <span style={{ fontSize: "11px", color: "var(--accent-dark)", fontWeight: "600" }}>
-                        + Add
+                      <span style={{ fontSize: "12px", color: "var(--green)", fontWeight: "700", display: "flex", alignItems: "center", gap: "2px" }}>
+                        <IconPlus size={14} /> Add
                       </span>
                     </div>
                   </div>
@@ -889,58 +900,49 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
           </div>
 
           {/* RIGHT: Live Cart Sidebar */}
-          <div
-            style={{
-              background: "#faf7f4",
-              border: "1.5px solid var(--border-light)",
-              borderRadius: "18px",
-              padding: "18px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              height: "fit-content",
-            }}
-          >
+          <div className="pos-cart-panel">
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-                <h5 style={{ margin: 0 }}>🛒 Current Cart</h5>
+                <h5 style={{ margin: 0, fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px", color: "var(--bordo)" }}>
+                  <IconReceipt size={20} />
+                  Order Cart
+                </h5>
                 {cart.length > 0 && (
-                  <button type="button" style={{ background: "none", border: "none", color: "#c0392b", fontSize: "12px", cursor: "pointer" }} onClick={clearCart}>
-                    Clear
+                  <button
+                    type="button"
+                    style={{ background: "none", border: "none", color: "var(--bordo)", fontSize: "12px", cursor: "pointer", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}
+                    onClick={clearCart}
+                  >
+                    <IconTrash size={14} /> Clear
                   </button>
                 )}
               </div>
 
               {/* Order Meta Pill */}
-              <div style={{ padding: "8px 12px", background: "#f0ebe3", borderRadius: "10px", fontSize: "12px", marginBottom: "14px" }}>
+              <div style={{ padding: "8px 12px", background: "var(--cream-light)", border: "1px solid var(--cream-border)", borderRadius: "10px", fontSize: "12px", marginBottom: "14px", color: "var(--text-primary)" }}>
                 <strong>Source:</strong> {orderSource.replace("_", " ")}{" "}
                 {orderSource === "DINE_IN" && selectedTableId && (
-                  <span>· Table {tables.find((t) => t.id === selectedTableId)?.number}</span>
+                  <span style={{ color: "var(--bordo)", fontWeight: "700" }}>· Table {tables.find((t) => t.id === selectedTableId)?.number}</span>
                 )}
               </div>
 
               {/* Cart Items List */}
               {cart.length === 0 ? (
-                <div style={{ padding: "32px 12px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
-                  Cart is empty. Tap menu items to add them.
+                <div style={{ padding: "36px 12px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", opacity: 0.5 }}>
+                    <IconReceipt size={32} />
+                  </div>
+                  Cart is empty. Tap items to build an order.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "320px", overflowY: "auto", paddingRight: "4px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "320px", overflowY: "auto", paddingRight: "4px" }}>
                   {cart.map((cItem, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: "10px",
-                        background: "var(--card-bg)",
-                        border: "1px solid var(--border-light)",
-                        borderRadius: "12px",
-                      }}
-                    >
+                    <div key={idx} className="cart-item-row">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div>
                           <strong style={{ fontSize: "13px" }}>{cItem.menuItem.name}</strong>
                           {cItem.selectedVariant && (
-                            <div style={{ fontSize: "11px", color: "var(--accent-dark)" }}>
+                            <div style={{ fontSize: "11px", color: "var(--bordo)" }}>
                               Option: {cItem.selectedVariant.name}
                             </div>
                           )}
@@ -955,7 +957,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                             </div>
                           )}
                         </div>
-                        <span style={{ fontWeight: "700", fontSize: "13px" }}>
+                        <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>
                           ${(cItem.unitPrice * cItem.quantity).toFixed(2)}
                         </span>
                       </div>
@@ -965,30 +967,29 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <button
                             type="button"
-                            className="btn-secondary"
-                            style={{ padding: "2px 8px", fontSize: "12px", borderRadius: "6px" }}
+                            className="stepper-btn"
                             onClick={() => updateCartItemQty(idx, -1)}
                           >
-                            -
+                            <IconMinus size={12} />
                           </button>
                           <span style={{ fontWeight: "700", fontSize: "13px", minWidth: "20px", textAlign: "center" }}>
                             {cItem.quantity}
                           </span>
                           <button
                             type="button"
-                            className="btn-secondary"
-                            style={{ padding: "2px 8px", fontSize: "12px", borderRadius: "6px" }}
+                            className="stepper-btn"
                             onClick={() => updateCartItemQty(idx, 1)}
                           >
-                            +
+                            <IconPlus size={12} />
                           </button>
                         </div>
                         <button
                           type="button"
-                          style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "14px" }}
+                          style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex" }}
                           onClick={() => removeCartItem(idx)}
+                          title="Remove Item"
                         >
-                          🗑️
+                          <IconTrash size={15} />
                         </button>
                       </div>
                     </div>
@@ -998,7 +999,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             </div>
 
             {/* Financial Summary & Place Buttons */}
-            <div style={{ marginTop: "16px", borderTop: "1.5px solid var(--border-medium)", paddingTop: "14px" }}>
+            <div style={{ marginTop: "auto", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
                 <span>Subtotal</span>
                 <strong>${cartSubtotal.toFixed(2)}</strong>
@@ -1007,7 +1008,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <span>Est. Tax (8%)</span>
                 <span>${cartTax.toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "16px", fontWeight: "800", color: "var(--accent-dark)", marginBottom: "14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
                 <span>Total</span>
                 <span>${cartTotal.toFixed(2)}</span>
               </div>
@@ -1016,21 +1017,23 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <button
                   type="button"
                   className="btn-primary"
-                  style={{ width: "100%", padding: "12px", fontWeight: "700", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                  style={{ width: "100%", padding: "12px" }}
                   disabled={cart.length === 0}
                   onClick={() => handlePlaceOrder(true, "KITCHEN")}
                 >
-                  👨‍🍳 Send to Kitchen & Print KOT
+                  <IconChef size={18} color="#FFFFFF" />
+                  Kitchen & Print KOT
                 </button>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   <button
                     type="button"
                     className="btn-secondary"
-                    style={{ padding: "9px 6px", fontSize: "12px", fontWeight: "600" }}
+                    style={{ padding: "9px 6px", fontSize: "12px", fontWeight: "700" }}
                     disabled={cart.length === 0}
                     onClick={() => handlePlaceOrder(false, "CUSTOMER")}
                   >
-                    🧾 Place & Receipt
+                    <IconReceipt size={15} />
+                    Receipt
                   </button>
                   <button
                     type="button"
@@ -1039,7 +1042,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                     disabled={cart.length === 0}
                     onClick={() => handlePlaceOrder(false)}
                   >
-                    💾 Save Order
+                    Save Order
                   </button>
                 </div>
               </div>
@@ -1148,16 +1151,17 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                           </span>
                         </td>
                         <td>
-                          <div className="action-buttons" style={{ flexWrap: "wrap", gap: "4px" }}>
+                          <div className="action-buttons" style={{ flexWrap: "wrap", gap: "6px" }}>
                             {/* Fast Checkout / Pay */}
                             <button
                               type="button"
                               className="btn-success btn-sm"
-                              style={{ fontWeight: "bold" }}
+                              style={{ fontWeight: "700" }}
                               onClick={() => handleOpenPayment(ord)}
                               title="Process Payment & Close"
                             >
-                              💵 Pay
+                              <IconCash size={14} color="#FFFFFF" />
+                              Pay
                             </button>
 
                             {/* Print KOT */}
@@ -1167,7 +1171,8 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                               onClick={() => handlePrintKitchenTicket(ord)}
                               title="Print Kitchen Order Ticket"
                             >
-                              🍳 KOT
+                              <IconChef size={14} />
+                              KOT
                             </button>
 
                             {/* Print Customer Receipt */}
@@ -1177,7 +1182,8 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                               onClick={() => handlePrintCustomerReceipt(ord)}
                               title="Print Customer Receipt"
                             >
-                              🧾 Receipt
+                              <IconReceipt size={14} />
+                              Receipt
                             </button>
 
                             {ord.status === "OPEN" && (
@@ -1187,7 +1193,8 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                                 onClick={() => handleSendToKitchen(ord.id)}
                                 title="Send order items to kitchen"
                               >
-                                👨‍🍳 Send
+                                <IconChef size={14} color="#FFFFFF" />
+                                Send
                               </button>
                             )}
 
@@ -1197,7 +1204,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                                 className="btn-secondary btn-sm"
                                 onClick={() => handleAdvanceStatus(ord)}
                               >
-                                ➡️ {ORDER_STATUS_LABELS[nextStatus]}
+                                ➔ {ORDER_STATUS_LABELS[nextStatus]}
                               </button>
                             )}
 
@@ -1205,15 +1212,17 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                               type="button"
                               className="btn-secondary btn-sm"
                               onClick={() => handleOpenOrderDetails(ord)}
+                              title="View Items"
                             >
-                              👁️ Items
+                              Items
                             </button>
                             <button
                               type="button"
                               className="btn-danger btn-sm"
                               onClick={() => openVoidOrderDialog(ord.id)}
+                              title="Void Order"
                             >
-                              🚫
+                              <IconClose size={13} />
                             </button>
                           </div>
                         </td>
@@ -1702,8 +1711,11 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
       {paymentModalOrder && (
         <div className="modal-backdrop">
           <div className="modal-content" style={{ maxWidth: "460px" }}>
-            <h3>💵 Checkout & Payment</h3>
-            <p className="subtitle" style={{ marginBottom: "14px" }}>
+            <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "800", color: "var(--bordo)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <IconCash size={24} color="var(--bordo)" />
+              Checkout & Payment
+            </h3>
+            <p className="subtitle" style={{ marginTop: "4px", marginBottom: "16px" }}>
               Order #{paymentModalOrder.id.slice(0, 8)} · {paymentModalOrder.order_source}{" "}
               {paymentModalOrder.table_number ? `(Table ${paymentModalOrder.table_number})` : ""}
             </p>
@@ -1714,57 +1726,60 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
               </div>
             )}
 
-            <div style={{ background: "#f8f9fa", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", marginBottom: "4px" }}>
-                <span>Bill Total Due:</span>
-                <span style={{ fontSize: "18px", fontWeight: "bold", color: "var(--accent)" }}>
+            <div style={{ background: "var(--cream-light)", border: "1.5px solid var(--cream-border)", padding: "14px 18px", borderRadius: "14px", marginBottom: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary)" }}>Total Amount Due:</span>
+                <span style={{ fontSize: "24px", fontWeight: "800", color: "var(--bordo)" }}>
                   ${paymentModalOrder.total.toFixed(2)}
                 </span>
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: "14px" }}>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "bold" }}>Payment Method</label>
+            <div className="form-group" style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", marginBottom: "8px", fontWeight: "700" }}>Payment Method</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
                 <button
                   type="button"
                   className={`btn-secondary ${paymentMethod === "CASH" ? "btn-primary" : ""}`}
-                  style={{ padding: "10px", fontWeight: paymentMethod === "CASH" ? "bold" : "normal" }}
+                  style={{ padding: "12px 8px", flexDirection: "column", gap: "6px" }}
                   onClick={() => setPaymentMethod("CASH")}
                 >
-                  💵 Cash
+                  <IconCash size={20} />
+                  Cash
                 </button>
                 <button
                   type="button"
                   className={`btn-secondary ${paymentMethod === "CARD" ? "btn-primary" : ""}`}
-                  style={{ padding: "10px", fontWeight: paymentMethod === "CARD" ? "bold" : "normal" }}
+                  style={{ padding: "12px 8px", flexDirection: "column", gap: "6px" }}
                   onClick={() => setPaymentMethod("CARD")}
                 >
-                  💳 Card
+                  <IconCard size={20} />
+                  Credit/Debit
                 </button>
                 <button
                   type="button"
                   className={`btn-secondary ${paymentMethod === "DIGITAL" ? "btn-primary" : ""}`}
-                  style={{ padding: "10px", fontWeight: paymentMethod === "DIGITAL" ? "bold" : "normal" }}
+                  style={{ padding: "12px 8px", flexDirection: "column", gap: "6px" }}
                   onClick={() => setPaymentMethod("DIGITAL")}
                 >
-                  📱 Digital / QR
+                  <IconQr size={20} />
+                  Digital/QR
                 </button>
               </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: "14px" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontWeight: "bold" }}>Amount Tendered ($)</label>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: "700" }}>Amount Tendered ($)</label>
               <input
                 type="number"
                 step="any"
                 min={paymentModalOrder.total}
                 value={paymentTendered}
                 onChange={(e) => setPaymentTendered(parseFloat(e.target.value) || 0)}
-                style={{ width: "100%", padding: "10px", fontSize: "16px", borderRadius: "6px", border: "1px solid #ccc" }}
+                style={{ width: "100%", padding: "10px 14px", fontSize: "18px", fontWeight: "700", borderRadius: "12px", border: "1.5px solid var(--card-border)" }}
                 autoFocus
               />
-              <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+              <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
                 <button
                   type="button"
                   className="btn-secondary btn-sm"
@@ -1792,21 +1807,22 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             {/* Change Due Display */}
             <div
               style={{
-                background: paymentTendered >= paymentModalOrder.total ? "#e8f5e9" : "#fff3e0",
-                padding: "12px",
-                borderRadius: "8px",
-                marginBottom: "16px",
+                background: paymentTendered >= paymentModalOrder.total ? "var(--green-light)" : "var(--bordo-light)",
+                border: paymentTendered >= paymentModalOrder.total ? "1.5px solid var(--green-border)" : "1.5px solid var(--bordo-border)",
+                padding: "14px 18px",
+                borderRadius: "14px",
+                marginBottom: "18px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
               }}
             >
-              <span style={{ fontWeight: "bold" }}>Change Due:</span>
+              <span style={{ fontWeight: "700", fontSize: "14px" }}>Change Due:</span>
               <span
                 style={{
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  color: paymentTendered >= paymentModalOrder.total ? "#2e7d32" : "#e65100",
+                  fontSize: "22px",
+                  fontWeight: "800",
+                  color: paymentTendered >= paymentModalOrder.total ? "var(--green)" : "var(--bordo)",
                 }}
               >
                 ${Math.max(0, paymentTendered - paymentModalOrder.total).toFixed(2)}
@@ -1820,10 +1836,10 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
               <button
                 type="button"
                 className="btn-success"
-                style={{ padding: "10px 20px", fontWeight: "bold" }}
                 onClick={handleProcessPaymentSubmit}
               >
-                ✅ Complete & Print Receipt
+                <IconCheck size={18} color="#FFFFFF" />
+                Complete & Print Receipt
               </button>
             </div>
           </div>

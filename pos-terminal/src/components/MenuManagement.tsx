@@ -26,6 +26,15 @@ import {
   isCategoryInTimeWindow,
 } from "../lib/menuService";
 import { useAuth } from "../store/useAuth";
+import {
+  IconMenu,
+  IconPlus,
+  IconEdit,
+  IconCheck,
+  IconAlert,
+  IconSearch,
+  IconUtensils,
+} from "./Icons";
 
 type MenuTab = "categories" | "items" | "variants_modifiers" | "combos";
 
@@ -435,8 +444,8 @@ export default function MenuManagement() {
   });
 
   return (
-    <div className="card full-width-card">
-      <div className="card-header-row">
+    <div className="card full-width-card" style={{ padding: "20px" }}>
+      <div className="card-header-row" style={{ marginBottom: "16px" }}>
         <div>
           <h4>Menu & Catalog Manager</h4>
           <p className="subtitle">Manage items, categories, variants, add-ons, and combo bundles</p>
@@ -444,82 +453,93 @@ export default function MenuManagement() {
       </div>
 
       {/* Metrics Summary Widgets */}
-      <div className="stats-grid">
+      <div className="stats-grid" style={{ marginBottom: "20px" }}>
         <div className="stat-card">
-          <div className="stat-icon">🍔</div>
+          <div className="stat-icon" style={{ background: "rgba(108, 21, 30, 0.08)", color: "var(--primary)" }}>
+            <IconUtensils size={22} color="var(--primary)" />
+          </div>
           <div>
             <div className="stat-value">{items.length}</div>
-            <div className="stat-label">Total Items</div>
+            <div className="stat-label">Total Menu Items</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">📂</div>
+          <div className="stat-icon" style={{ background: "rgba(15, 61, 58, 0.08)", color: "var(--secondary)" }}>
+            <IconMenu size={22} color="var(--secondary)" />
+          </div>
           <div>
             <div className="stat-value">{categories.length}</div>
             <div className="stat-label">Categories</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon" style={{ background: "rgba(15, 61, 58, 0.08)", color: "var(--secondary)" }}>
+            <IconCheck size={22} color="var(--secondary)" />
+          </div>
           <div>
-            <div className="stat-value">{inStockCount}</div>
-            <div className="stat-label">In Stock</div>
+            <div className="stat-value" style={{ color: "var(--secondary)" }}>{inStockCount}</div>
+            <div className="stat-label">In Stock & Ready</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon stat-danger">🚫</div>
+          <div className="stat-icon" style={{ background: "rgba(108, 21, 30, 0.12)", color: "var(--primary)" }}>
+            <IconAlert size={22} color="var(--primary)" />
+          </div>
           <div>
-            <div className="stat-value stat-value-danger">{soldOutCount}</div>
+            <div className="stat-value" style={{ color: "var(--primary)" }}>{soldOutCount}</div>
             <div className="stat-label">86'd / Sold Out</div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="pin-error" onClick={() => setError(null)}>
-          {error} (click to dismiss)
+        <div className="pin-error" onClick={() => setError(null)} style={{ cursor: "pointer", marginBottom: "14px" }}>
+          <IconAlert size={16} /> {error} (click to dismiss)
         </div>
       )}
       {success && (
-        <div className="success-banner" onClick={() => setSuccess(null)}>
-          ✅ {success} (click to dismiss)
+        <div className="success-banner" onClick={() => setSuccess(null)} style={{ cursor: "pointer", marginBottom: "14px" }}>
+          <IconCheck size={16} /> {success} (click to dismiss)
         </div>
       )}
 
       {/* Sub-Navigation Tabs */}
-      <div className="sub-nav-tabs">
+      <div className="sub-nav-tabs" style={{ marginBottom: "18px" }}>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "items" ? "active" : ""}`}
           onClick={() => setActiveTab("items")}
         >
-          🍔 Menu Items
+          <IconUtensils size={15} /> Menu Items
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "categories" ? "active" : ""}`}
           onClick={() => setActiveTab("categories")}
         >
-          📂 Categories
+          <IconMenu size={15} /> Categories
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "variants_modifiers" ? "active" : ""}`}
           onClick={() => setActiveTab("variants_modifiers")}
         >
-          📏 Variants & Add-ons
+          <IconEdit size={15} /> Variants & Add-ons
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeTab === "combos" ? "active" : ""}`}
           onClick={() => setActiveTab("combos")}
         >
-          🎁 Combo Bundles
+          <IconPlus size={15} /> Combo Bundles
         </button>
       </div>
 
       {loading ? (
-        <p>Loading menu management data...</p>
+        <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+          <IconMenu size={32} color="var(--primary)" />
+          <p style={{ marginTop: "8px" }}>Loading menu management data...</p>
+        </div>
       ) : (
         <>
           {/* ─────────────────────────────────────────────────────────────────── */}
@@ -527,20 +547,21 @@ export default function MenuManagement() {
           {/* ─────────────────────────────────────────────────────────────────── */}
           {activeTab === "items" && (
             <div>
-              <div className="card-header-row" style={{ marginTop: "16px" }}>
-                <div className="filter-controls">
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div className="card-header-row" style={{ marginTop: "8px", marginBottom: "16px" }}>
+                <div className="filter-controls" style={{ flexWrap: "wrap" }}>
+                  <div style={{ position: "relative", minWidth: "180px" }}>
+                    <div style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}>
+                      <IconSearch size={14} />
+                    </div>
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="🔍 Search items..."
+                      placeholder="Search items..."
                       style={{
-                        padding: "7px 12px",
-                        borderRadius: "10px",
-                        border: "1.5px solid var(--border-medium)",
+                        paddingLeft: "32px",
                         fontSize: "13px",
-                        width: "180px",
+                        width: "100%",
                       }}
                     />
                   </div>
@@ -577,8 +598,8 @@ export default function MenuManagement() {
                   </div>
                 </div>
 
-                <button type="button" className="btn-primary" onClick={openAddItemModal}>
-                  + Add Menu Item
+                <button type="button" className="btn-primary" onClick={openAddItemModal} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <IconPlus size={16} /> Add Menu Item
                 </button>
               </div>
 

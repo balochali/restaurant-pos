@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAuditLogs, AuditLogEntry } from "../lib/auditService";
+import { IconAudit, IconClock } from "./Icons";
 
 export default function AuditLogViewer() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -76,14 +77,14 @@ export default function AuditLogViewer() {
   };
 
   return (
-    <div className="card full-width-card">
-      <div className="card-header-row">
+    <div className="card full-width-card" style={{ padding: "20px" }}>
+      <div className="card-header-row" style={{ marginBottom: "16px" }}>
         <div>
-          <h4>Activity Logs</h4>
-          <p className="subtitle">A real-time trail of all staff actions and system events</p>
+          <h4>System Audit & Activity Trail</h4>
+          <p className="subtitle">Real-time immutable log of all staff actions, payments, and system events</p>
         </div>
 
-        <div className="filter-controls">
+        <div className="filter-controls" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
             <option value="ALL">All Event Types</option>
             {actionTypes.map((type) => (
@@ -93,18 +94,24 @@ export default function AuditLogViewer() {
             ))}
           </select>
           <button type="button" className="btn-secondary" onClick={refreshAuditLogs}>
-            🔄 Refresh Logs
+            Refresh Logs
           </button>
         </div>
       </div>
 
       {loading ? (
-        <p style={{ padding: "24px", color: "var(--text-muted)" }}>⏳ Loading activity logs...</p>
+        <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+          <IconAudit size={32} color="var(--primary)" />
+          <p style={{ marginTop: "8px" }}>Loading activity logs...</p>
+        </div>
       ) : filteredLogs.length === 0 ? (
-        <p className="no-logs">📭 No events found for the selected filter.</p>
+        <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+          <IconAudit size={40} color="var(--text-muted)" />
+          <p style={{ marginTop: "12px" }}>No events found for the selected filter.</p>
+        </div>
       ) : (
-        <div className="table-responsive">
-          <table className="audit-table">
+        <div className="table-responsive" style={{ border: "1px solid var(--border-light)", borderRadius: "14px", overflow: "hidden" }}>
+          <table className="staff-table" style={{ margin: 0 }}>
             <thead>
               <tr>
                 <th>Timestamp</th>
@@ -117,12 +124,19 @@ export default function AuditLogViewer() {
             <tbody>
               {filteredLogs.map((log) => (
                 <tr key={log.id}>
-                  <td className="timestamp-cell">{formatTime(log.timestamp)}</td>
+                  <td className="timestamp-cell" style={{ color: "var(--text-muted)", fontSize: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                      <IconClock size={13} />
+                      <span>{formatTime(log.timestamp)}</span>
+                    </div>
+                  </td>
                   <td>
-                    <div className="user-cell">
-                      <div className="avatar-sm">{(log.user_name || "S").charAt(0)}</div>
+                    <div className="user-cell" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div className="avatar-sm" style={{ background: "var(--surface-warm)", color: "var(--primary)", fontWeight: "700" }}>
+                        {(log.user_name || "S").charAt(0)}
+                      </div>
                       <div>
-                        <div className="staff-name">{log.user_name || "System"}</div>
+                        <div className="staff-name" style={{ fontWeight: "600" }}>{log.user_name || "System"}</div>
                         {log.user_role && (
                           <span className={`role-pill role-${log.user_role}`}>{log.user_role}</span>
                         )}
@@ -135,7 +149,9 @@ export default function AuditLogViewer() {
                     </span>
                   </td>
                   <td>
-                    <code>{log.entity_affected}</code>
+                    <code style={{ background: "var(--surface-warm)", padding: "2px 6px", borderRadius: "4px", fontSize: "12px" }}>
+                      {log.entity_affected}
+                    </code>
                   </td>
                   <td>
                     <div>{log.reason || "—"}</div>

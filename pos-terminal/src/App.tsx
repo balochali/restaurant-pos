@@ -9,6 +9,17 @@ import AuditLogViewer from "./components/AuditLogViewer";
 import MenuManagement from "./components/MenuManagement";
 import OrderManagement from "./components/OrderManagement";
 import TableManagement from "./components/TableManagement";
+import {
+  IconPosTerminal,
+  IconTable,
+  IconMenu,
+  IconUsers,
+  IconInventory,
+  IconAudit,
+  IconCrown,
+  IconSwitchUser,
+  IconLogout,
+} from "./components/Icons";
 import "./App.css";
 
 type Tab = "cashier_pos" | "tables" | "menu" | "users" | "inventory" | "audit";
@@ -29,67 +40,56 @@ function TerminalContent() {
     setActiveTab("cashier_pos");
   };
 
+  const isAdminTab = ["menu", "users", "inventory", "audit"].includes(activeTab);
+
   return (
     <div className="dashboard-container">
-      {/* Top Header Bar */}
+      {/* Top Luxury Header Bar */}
       <header className="dashboard-header">
         <div className="user-badge">
-          <div className="avatar" style={{ background: isAdminOrManager ? "var(--primary-color, #e65100)" : "#1d4ed8" }}>
+          <div className="avatar">
             {user.name.charAt(0)}
           </div>
           <div className="user-info">
-            <h3 style={{ margin: 0, fontSize: "16px" }}>{user.name}</h3>
-            <span className={`role-pill role-${user.role}`}>{user.role}</span>
+            <h3>{user.name}</h3>
+            <span className={`role-pill role-${user.role}`}>
+              {isAdminOrManager && <IconCrown size={12} color="currentColor" />}
+              {user.role}
+            </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* Quick View Mode Indicator for Admins */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Quick View Mode Switcher for Admins */}
           {isAdminOrManager && (
-            <div style={{ display: "flex", background: "#f0f0f0", padding: "3px", borderRadius: "8px" }}>
+            <div className="mode-switch-pill">
               <button
                 type="button"
-                style={{
-                  padding: "6px 12px",
-                  fontSize: "12px",
-                  fontWeight: ["menu", "users", "inventory", "audit"].includes(activeTab) ? "bold" : "normal",
-                  background: ["menu", "users", "inventory", "audit"].includes(activeTab) ? "#fff" : "transparent",
-                  color: ["menu", "users", "inventory", "audit"].includes(activeTab) ? "#000" : "#666",
-                  border: "none",
-                  borderRadius: "6px",
-                  boxShadow: ["menu", "users", "inventory", "audit"].includes(activeTab) ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                  cursor: "pointer",
-                }}
+                className={`mode-switch-btn ${isAdminTab ? "active" : ""}`}
                 onClick={() => setActiveTab("menu")}
               >
-                👑 Admin View
+                <IconCrown size={14} color={isAdminTab ? "var(--bordo)" : "var(--text-secondary)"} />
+                Admin Hub
               </button>
               <button
                 type="button"
-                style={{
-                  padding: "6px 12px",
-                  fontSize: "12px",
-                  fontWeight: ["cashier_pos", "tables"].includes(activeTab) ? "bold" : "normal",
-                  background: ["cashier_pos", "tables"].includes(activeTab) ? "#fff" : "transparent",
-                  color: ["cashier_pos", "tables"].includes(activeTab) ? "#000" : "#666",
-                  border: "none",
-                  borderRadius: "6px",
-                  boxShadow: ["cashier_pos", "tables"].includes(activeTab) ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                  cursor: "pointer",
-                }}
+                className={`mode-switch-btn ${!isAdminTab ? "active" : ""}`}
                 onClick={() => setActiveTab("cashier_pos")}
               >
-                🛒 Cashier View
+                <IconPosTerminal size={14} color={!isAdminTab ? "var(--bordo)" : "var(--text-secondary)"} />
+                Cashier POS
               </button>
             </div>
           )}
 
-          <div className="header-actions">
-            <button type="button" className="btn-secondary" onClick={switchUser} title="Switch Cashier / User">
-              🔄 Switch User
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button type="button" className="btn-secondary" onClick={switchUser} title="Switch User">
+              <IconSwitchUser size={16} />
+              Switch
             </button>
             <button type="button" className="btn-danger" onClick={logout} title="Sign Out">
-              🚪 Logout
+              <IconLogout size={16} />
+              Logout
             </button>
           </div>
         </div>
@@ -103,7 +103,8 @@ function TerminalContent() {
           className={`nav-tab ${activeTab === "cashier_pos" ? "active" : ""}`}
           onClick={() => setActiveTab("cashier_pos")}
         >
-          🛒 POS Terminal
+          <IconPosTerminal size={18} color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"} />
+          POS Register
         </button>
 
         <button
@@ -111,7 +112,8 @@ function TerminalContent() {
           className={`nav-tab ${activeTab === "tables" ? "active" : ""}`}
           onClick={() => setActiveTab("tables")}
         >
-          🪑 Floor Plan & Tables
+          <IconTable size={18} color={activeTab === "tables" ? "#FFFFFF" : "currentColor"} />
+          Floor Plan
         </button>
 
         {/* Admin Operations */}
@@ -121,7 +123,8 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "menu" ? "active" : ""}`}
             onClick={() => setActiveTab("menu")}
           >
-            📋 Menu & Categories
+            <IconMenu size={18} color={activeTab === "menu" ? "#FFFFFF" : "currentColor"} />
+            Menu & Catalog
           </button>
         </PermissionGate>
 
@@ -131,7 +134,8 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "users" ? "active" : ""}`}
             onClick={() => setActiveTab("users")}
           >
-            👥 Cashier Management
+            <IconUsers size={18} color={activeTab === "users" ? "#FFFFFF" : "currentColor"} />
+            Cashier Management
           </button>
         </PermissionGate>
 
@@ -141,7 +145,8 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "inventory" ? "active" : ""}`}
             onClick={() => setActiveTab("inventory")}
           >
-            📦 Inventory
+            <IconInventory size={18} color={activeTab === "inventory" ? "#FFFFFF" : "currentColor"} />
+            Inventory Stock
           </button>
         </PermissionGate>
 
@@ -151,13 +156,14 @@ function TerminalContent() {
             className={`nav-tab ${activeTab === "audit" ? "active" : ""}`}
             onClick={() => setActiveTab("audit")}
           >
-            📜 Activity Logs
+            <IconAudit size={18} color={activeTab === "audit" ? "#FFFFFF" : "currentColor"} />
+            Audit Logs
           </button>
         </PermissionGate>
       </nav>
 
       {/* Tab Contents */}
-      <main style={{ minHeight: "calc(100vh - 140px)" }}>
+      <main style={{ padding: "20px 28px", minHeight: "calc(100vh - 140px)" }}>
         {activeTab === "cashier_pos" && (
           <OrderManagement
             initialTableId={selectedTableForOrder}
