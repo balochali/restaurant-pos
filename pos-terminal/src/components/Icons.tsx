@@ -221,6 +221,15 @@ export const IconFilter: React.FC<IconProps> = ({ size = 18, color = "currentCol
   </svg>
 );
 
+export const IconChart: React.FC<IconProps> = ({ size = 20, color = "currentColor", ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="12" y1="20" x2="12" y2="10" />
+    <line x1="18" y1="20" x2="18" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="16" />
+    <line x1="3" y1="20" x2="21" y2="20" />
+  </svg>
+);
+
 export const IconLock: React.FC<IconProps> = ({ size = 20, color = "currentColor", ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />

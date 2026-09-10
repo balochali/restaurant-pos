@@ -9,6 +9,7 @@ import AuditLogViewer from "./components/AuditLogViewer";
 import MenuManagement from "./components/MenuManagement";
 import OrderManagement from "./components/OrderManagement";
 import TableManagement from "./components/TableManagement";
+import TotalOrders from "./components/TotalOrders";
 import {
   IconPosTerminal,
   IconTable,
@@ -202,6 +203,18 @@ function TerminalContent() {
 
               <PermissionGate action="view_reports">
                 <SidebarNavItem
+                  tab="reports"
+                  activeTab={activeTab}
+                  onSelect={handleTabSelect}
+                  label="Total Orders"
+                  icon={
+                    <IconChart size={22} color={activeTab === "reports" ? "#FFFFFF" : "currentColor"} />
+                  }
+                />
+              </PermissionGate>
+
+              <PermissionGate action="view_reports">
+                <SidebarNavItem
                   tab="audit"
                   activeTab={activeTab}
                   onSelect={handleTabSelect}
@@ -303,6 +316,20 @@ function TerminalContent() {
                 }
               >
                 <InventoryManagement />
+              </PermissionGate>
+            )}
+
+            {activeTab === "reports" && (
+              <PermissionGate
+                action="view_reports"
+                fallback={
+                  <div className="card">
+                    <h4>Access Restricted</h4>
+                    <p>You need permission to view sales reports.</p>
+                  </div>
+                }
+              >
+                <TotalOrders />
               </PermissionGate>
             )}
 

@@ -37,6 +37,7 @@ import {
   IconUtensils,
   IconTrash,
   IconClock,
+  IconFilter,
 } from "./Icons";
 
 type MenuTab = "categories" | "items" | "variants_modifiers" | "combos";
@@ -664,23 +665,6 @@ export default function MenuManagement() {
 
                 <div className="menu-toolbar-filters">
                   <div className="menu-filter-group">
-                    <label htmlFor="menu-category-filter">Category</label>
-                    <select
-                      id="menu-category-filter"
-                      className="menu-filter-select"
-                      value={selectedCategoryFilter}
-                      onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-                    >
-                      <option value="ALL">All Categories ({items.length})</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="menu-filter-group">
                     <label htmlFor="menu-stock-filter">Stock Status</label>
                     <select
                       id="menu-stock-filter"
@@ -702,6 +686,29 @@ export default function MenuManagement() {
                 >
                   <IconPlus size={16} /> Add Menu Item
                 </button>
+              </div>
+
+              {/* Category Filter Pills */}
+              <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "16px" }}>
+                <button
+                  type="button"
+                  className={`sub-nav-tab ${selectedCategoryFilter === "ALL" ? "active" : ""}`}
+                  onClick={() => setSelectedCategoryFilter("ALL")}
+                >
+                  <IconFilter size={14} />
+                  All Categories ({items.length})
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`sub-nav-tab ${selectedCategoryFilter === c.id ? "active" : ""}`}
+                    onClick={() => setSelectedCategoryFilter(c.id)}
+                  >
+                    <IconUtensils size={14} />
+                    {c.name} ({items.filter((i) => i.category_id === c.id).length})
+                  </button>
+                ))}
               </div>
 
               {filteredMenuItems.length === 0 ? (
@@ -749,9 +756,8 @@ export default function MenuManagement() {
                               {item.is_combo === 1 && <span className="menu-badge menu-badge-combo">Combo</span>}
                               {item.available_from && item.available_until && (
                                 <span
-                                  className={`menu-badge ${
-                                    isItemInTimeWindow(item) ? "menu-badge-open" : "menu-badge-closed"
-                                  }`}
+                                  className={`menu-badge ${isItemInTimeWindow(item) ? "menu-badge-open" : "menu-badge-closed"
+                                    }`}
                                 >
                                   {item.available_from} – {item.available_until}
                                   {!isItemInTimeWindow(item) && " · Closed"}
@@ -903,9 +909,8 @@ export default function MenuManagement() {
                           <IconClock size={14} color="var(--text-muted)" />
                           {cat.available_from && cat.available_until ? (
                             <span
-                              className={`menu-badge ${
-                                isCategoryInTimeWindow(cat) ? "menu-badge-open" : "menu-badge-closed"
-                              }`}
+                              className={`menu-badge ${isCategoryInTimeWindow(cat) ? "menu-badge-open" : "menu-badge-closed"
+                                }`}
                             >
                               {cat.available_from} – {cat.available_until}
                               {!isCategoryInTimeWindow(cat) && " · Closed"}

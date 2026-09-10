@@ -35,6 +35,7 @@ export interface DbOrder {
   customer_address: string | null;
   status: OrderStatus;
   notes: string | null;
+  payment_method?: "CASH" | "CARD" | "DIGITAL" | "OTHER" | null;
   subtotal: number;
   discount: number;
   tax: number;
@@ -163,6 +164,30 @@ export async function getAllOrders(limit = 50): Promise<DbOrder[]> {
      FROM orders o
      LEFT JOIN tables t ON t.id = o.table_id
      LEFT JOIN users  u ON u.id = o.created_by_id
+     ORDER BY o.created_locally_at DESC
+     LIMIT ?`,
+    [limit]
+  );
+}
+
+// ─── Sales Reporting ────────────────────────────────────────────────────────
+
+/**
+ * Returns completed (paid & closed) orders, most recent first, with the
+ * payment method used. Used by the Total Orders / sales report screen to
+ * compute daily, weekly, and monthly totals.
+ */
+export async function getClosedOrders(limit = 1000): Promise<DbOrder[]> {
+  const db = await getDb();
+  return db.select<DbOrder[]>(
+    `SELECT o.*, t.number as table_number, u.name as created_by_name,
+            (SELECT p.method FROM payments p
+              WHERE p.order_id = o.id AND p.status = 'COMPLETED'
+              ORDER BY p.created_at DESC LIMIT 1) as payment_method
+     FROM orders o
+     LEFT JOIN tables t ON t.id = o.table_id
+     LEFT JOIN users  u ON u.id = o.created_by_id
+     WHERE o.status = 'CLOSED'
      ORDER BY o.created_locally_at DESC
      LIMIT ?`,
     [limit]
