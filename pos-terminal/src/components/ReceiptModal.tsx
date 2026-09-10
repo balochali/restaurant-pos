@@ -5,6 +5,7 @@ import {
   generateKitchenTicketHtml,
   printReceiptHtml,
 } from "../lib/receiptService";
+import { IconReceipt, IconChef, IconPrint, IconClose } from "./Icons";
 
 interface ReceiptModalProps {
   receiptData: ReceiptData;
@@ -29,14 +30,26 @@ export default function ReceiptModal({
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: "420px", padding: "20px" }}>
+    <div className="modal-backdrop">
+      <div className="modal-content" style={{ maxWidth: "440px", padding: "24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <h3 style={{ margin: 0, fontSize: "18px" }}>
-            {receiptType === "CUSTOMER" ? "🧾 Customer Receipt" : "🍳 Kitchen Ticket (KOT)"}
+          <h3 style={{ margin: 0, fontSize: "18px", display: "flex", alignItems: "center", gap: "8px" }}>
+            {receiptType === "CUSTOMER" ? (
+              <>
+                <IconReceipt size={20} color="var(--primary)" /> Customer Receipt
+              </>
+            ) : (
+              <>
+                <IconChef size={20} color="var(--secondary)" /> Kitchen Ticket (KOT)
+              </>
+            )}
           </h3>
-          <button type="button" className="btn-close" onClick={onClose}>
-            ✕
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+          >
+            <IconClose size={20} />
           </button>
         </div>
 
@@ -44,37 +57,33 @@ export default function ReceiptModal({
         <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
           <button
             type="button"
-            className={`btn-secondary ${receiptType === "CUSTOMER" ? "active-tab-btn" : ""}`}
+            className={`sub-nav-tab ${receiptType === "CUSTOMER" ? "active" : ""}`}
             style={{
               flex: 1,
-              padding: "8px",
-              fontWeight: receiptType === "CUSTOMER" ? "bold" : "normal",
-              backgroundColor: receiptType === "CUSTOMER" ? "var(--primary-color, #e65100)" : "var(--bg-secondary, #f0f0f0)",
-              color: receiptType === "CUSTOMER" ? "#fff" : "inherit",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              cursor: "pointer",
+              padding: "9px 12px",
+              justifyContent: "center",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
             onClick={() => setReceiptType("CUSTOMER")}
           >
-            🧾 Customer Receipt
+            <IconReceipt size={16} /> Customer Receipt
           </button>
           <button
             type="button"
-            className={`btn-secondary ${receiptType === "KITCHEN" ? "active-tab-btn" : ""}`}
+            className={`sub-nav-tab ${receiptType === "KITCHEN" ? "active" : ""}`}
             style={{
               flex: 1,
-              padding: "8px",
-              fontWeight: receiptType === "KITCHEN" ? "bold" : "normal",
-              backgroundColor: receiptType === "KITCHEN" ? "var(--primary-color, #e65100)" : "var(--bg-secondary, #f0f0f0)",
-              color: receiptType === "KITCHEN" ? "#fff" : "inherit",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              cursor: "pointer",
+              padding: "9px 12px",
+              justifyContent: "center",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
             }}
             onClick={() => setReceiptType("KITCHEN")}
           >
-            🍳 Kitchen Ticket (KOT)
+            <IconChef size={16} /> Kitchen Ticket (KOT)
           </button>
         </div>
 
@@ -82,10 +91,10 @@ export default function ReceiptModal({
         <div
           style={{
             background: "#ffffff",
-            border: "1px solid #ddd",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-            borderRadius: "6px",
-            padding: "8px",
+            border: "1px solid var(--border-light)",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+            borderRadius: "12px",
+            padding: "12px",
             maxHeight: "380px",
             overflowY: "auto",
             marginBottom: "16px",
@@ -102,21 +111,16 @@ export default function ReceiptModal({
             style={{
               flex: 2,
               padding: "12px",
-              fontSize: "15px",
-              fontWeight: "bold",
+              fontSize: "14px",
+              fontWeight: "700",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "8px",
-              backgroundColor: "var(--primary-color, #e65100)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
             }}
             onClick={handlePrint}
           >
-            🖨️ Print {receiptType === "CUSTOMER" ? "Receipt" : "Kitchen Ticket"}
+            <IconPrint size={18} /> Print {receiptType === "CUSTOMER" ? "Receipt" : "Kitchen Ticket"}
           </button>
           <button
             type="button"
@@ -124,9 +128,6 @@ export default function ReceiptModal({
             style={{
               flex: 1,
               padding: "12px",
-              borderRadius: "6px",
-              border: "1px solid #ccc",
-              cursor: "pointer",
             }}
             onClick={onClose}
           >

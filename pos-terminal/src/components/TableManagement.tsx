@@ -16,7 +16,19 @@ import {
   reserveTable,
 } from "../lib/tableService";
 import { DbUser } from "../lib/authService";
+import { formatCurrency } from "../lib/formatCurrency";
 import { useAuth } from "../store/useAuth";
+import {
+  IconTable,
+  IconUsers,
+  IconEdit,
+  IconTrash,
+  IconCheck,
+  IconClock,
+  IconAlert,
+  IconClose,
+  IconPosTerminal,
+} from "./Icons";
 
 interface TableManagementProps {
   onSelectTable?: (tableId: string, tableNumber: string) => void;
@@ -282,9 +294,10 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
 
   if (loading) {
     return (
-      <div className="card full-width-card">
-        <p style={{ padding: "32px", textAlign: "center", color: "var(--text-muted)" }}>
-          ⏳ Loading Floor Plan & Tables...
+      <div className="card full-width-card" style={{ padding: "48px", textAlign: "center" }}>
+        <IconTable size={36} color="var(--primary)" />
+        <p style={{ marginTop: "12px", color: "var(--text-muted)", fontWeight: "600" }}>
+          Loading Live Floor Plan & Tables...
         </p>
       </div>
     );
@@ -294,58 +307,68 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
     <div className="card full-width-card">
       <div className="card-header-row">
         <div>
-          <h4>Table & Floor Management System</h4>
-          <p className="subtitle">Live interactive floor plan, layout editor, waiter assignments & table lifecycle</p>
+          <h4>Table & Floor Management</h4>
+          <p className="subtitle">Live dining room layout, table occupancy, waiter assignments & seating lifecycle</p>
         </div>
       </div>
 
       {/* Metrics Header Bar */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">🪑</div>
+          <div className="stat-icon" style={{ background: "rgba(108, 21, 30, 0.08)", color: "var(--primary)" }}>
+            <IconTable size={22} color="var(--primary)" />
+          </div>
           <div>
             <div className="stat-value">{metrics.total}</div>
             <div className="stat-label">Total Tables</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#1a7a4a" }}>🟢</div>
+          <div className="stat-icon" style={{ background: "rgba(15, 61, 58, 0.08)", color: "var(--secondary)" }}>
+            <IconCheck size={22} color="var(--secondary)" />
+          </div>
           <div>
-            <div className="stat-value" style={{ color: "#1a7a4a" }}>{metrics.free}</div>
-            <div className="stat-label">Free / Available</div>
+            <div className="stat-value" style={{ color: "var(--secondary)" }}>{metrics.free}</div>
+            <div className="stat-label">Free & Ready</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#c0392b" }}>🔴</div>
+          <div className="stat-icon" style={{ background: "rgba(108, 21, 30, 0.12)", color: "var(--primary)" }}>
+            <IconUsers size={22} color="var(--primary)" />
+          </div>
           <div>
-            <div className="stat-value" style={{ color: "#c0392b" }}>{metrics.occupied}</div>
-            <div className="stat-label">Occupied</div>
+            <div className="stat-value" style={{ color: "var(--primary)" }}>{metrics.occupied}</div>
+            <div className="stat-label">Occupied (Seated)</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#d97706" }}>🟡</div>
+          <div className="stat-icon" style={{ background: "rgba(217, 119, 6, 0.12)", color: "#D97706" }}>
+            <IconAlert size={22} color="#D97706" />
+          </div>
           <div>
-            <div className="stat-value" style={{ color: "#d97706" }}>{metrics.needsCleaning}</div>
+            <div className="stat-value" style={{ color: "#D97706" }}>{metrics.needsCleaning}</div>
             <div className="stat-label">Needs Cleaning</div>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon" style={{ color: "#1d4ed8" }}>🔵</div>
+          <div className="stat-icon" style={{ background: "rgba(37, 99, 235, 0.1)", color: "#2563EB" }}>
+            <IconClock size={22} color="#2563EB" />
+          </div>
           <div>
-            <div className="stat-value" style={{ color: "#1d4ed8" }}>{metrics.reserved}</div>
+            <div className="stat-value" style={{ color: "#2563EB" }}>{metrics.reserved}</div>
             <div className="stat-label">Reserved</div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="pin-error" onClick={() => setError(null)}>
-          {error} (click to dismiss)
+        <div className="pin-error" onClick={() => setError(null)} style={{ cursor: "pointer" }}>
+          <IconAlert size={16} color="var(--primary)" /> {error} (click to dismiss)
         </div>
       )}
       {success && (
-        <div className="success-banner" onClick={() => setSuccess(null)}>
-          ✅ {success} (click to dismiss)
+        <div className="success-banner" onClick={() => setSuccess(null)} style={{ cursor: "pointer" }}>
+          <IconCheck size={16} color="var(--secondary)" /> {success} (click to dismiss)
         </div>
       )}
 
@@ -356,21 +379,21 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
           className={`sub-nav-tab ${activeSubtab === "live_floor" ? "active" : ""}`}
           onClick={() => setActiveSubtab("live_floor")}
         >
-          🗺️ Live Floor Plan
+          <IconTable size={16} /> Live Floor Plan
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeSubtab === "layout_builder" ? "active" : ""}`}
           onClick={() => setActiveSubtab("layout_builder")}
         >
-          ✏️ Floor Plan Builder & Editor
+          <IconEdit size={16} /> Floor Plan Editor & Canvas
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeSubtab === "staff_assignment" ? "active" : ""}`}
           onClick={() => setActiveSubtab("staff_assignment")}
         >
-          👥 Waiter & Section Assignment
+          <IconUsers size={16} /> Server & Section Assignment
         </button>
       </div>
 
@@ -496,7 +519,7 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "700" }}>
-                          <span>Bill: ${(tbl.active_order_total || 0).toFixed(2)}</span>
+                          <span>Bill: {formatCurrency(tbl.active_order_total || 0)}</span>
                           <span style={{ color: "#c0392b" }}>
                             {getSeatedDuration(tbl.active_order_created_at)}
                           </span>
@@ -619,9 +642,9 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                     height: isRound ? "100px" : "80px",
                     borderRadius: isRound ? "50%" : "12px",
                     background: "var(--card-bg)",
-                    border: isSelectedForDrag ? "2px solid var(--accent)" : "1.5px solid var(--border-medium)",
+                    border: isSelectedForDrag ? "2px solid var(--primary)" : "1.5px solid var(--border-medium)",
                     boxShadow: isSelectedForDrag
-                      ? "0 10px 25px rgba(194, 105, 58, 0.35)"
+                      ? "0 10px 25px rgba(108, 21, 30, 0.25)"
                       : "0 2px 8px rgba(0,0,0,0.08)",
                     cursor: "grab",
                     display: "flex",
@@ -635,29 +658,31 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                   }}
                 >
                   <strong style={{ fontSize: "15px", color: "var(--text-primary)" }}>{tbl.number}</strong>
-                  <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>👥 {tbl.capacity}p</span>
-                  <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
+                  <span style={{ fontSize: "11px", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "2px" }}>
+                    <IconUsers size={12} /> {tbl.capacity}p
+                  </span>
+                  <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
                     <button
                       type="button"
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: 0 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: "var(--secondary)" }}
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditTableModal(tbl);
                       }}
                       title="Edit Table"
                     >
-                      ✏️
+                      <IconEdit size={14} />
                     </button>
                     <button
                       type="button"
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: "12px", padding: 0 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: "2px", color: "var(--primary)" }}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteTable(tbl);
                       }}
                       title="Delete Table"
                     >
-                      🗑️
+                      <IconTrash size={14} />
                     </button>
                   </div>
                 </div>
@@ -693,10 +718,10 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                     <td>
                       <div className="action-buttons">
                         <button type="button" className="btn-secondary btn-sm" onClick={() => openEditTableModal(tbl)}>
-                          Edit
+                          <IconEdit size={13} /> Edit
                         </button>
                         <button type="button" className="btn-danger btn-sm" onClick={() => handleDeleteTable(tbl)}>
-                          Delete
+                          <IconTrash size={13} /> Delete
                         </button>
                       </div>
                     </td>
@@ -755,7 +780,7 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
 
           {/* Individual Table Assignment List */}
           <div className="sub-card">
-            <h5>📋 Individual Table Assignments</h5>
+            <h5><IconUsers size={16} /> Individual Table Assignments</h5>
             <p className="subtitle" style={{ marginBottom: "16px" }}>
               Set individual table servers.
             </p>
@@ -855,7 +880,7 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  Save Table
+                  <IconCheck size={16} /> Save Table
                 </button>
               </div>
             </form>
@@ -869,10 +894,19 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
       {isActionModalOpen && selectedTable && (
         <div className="modal-backdrop">
           <div className="modal-content" style={{ maxWidth: "460px" }}>
-            <h3>Table {selectedTable.number} Controls</h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <h3 style={{ margin: 0 }}>Table {selectedTable.number} Controls</h3>
+              <button
+                type="button"
+                onClick={() => setIsActionModalOpen(false)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+              >
+                <IconClose size={20} />
+              </button>
+            </div>
             <p className="subtitle" style={{ marginBottom: "16px" }}>
               {selectedTable.section || "Main"} · {selectedTable.capacity} Seats ·{" "}
-              Status: <strong style={{ color: "var(--accent)" }}>{selectedTable.status.replace("_", " ")}</strong>
+              Status: <strong style={{ color: "var(--primary)" }}>{selectedTable.status.replace("_", " ")}</strong>
             </p>
 
             {/* Quick Order Action */}
@@ -883,7 +917,7 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                   className="btn-primary"
                   style={{
                     width: "100%",
-                    padding: "12px",
+                    padding: "14px",
                     fontSize: "15px",
                     fontWeight: "bold",
                     display: "flex",
@@ -896,21 +930,21 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                     onSelectTable(selectedTable.id, selectedTable.number);
                   }}
                 >
-                  🛒 {selectedTable.status === "OCCUPIED" ? "View / Add to Order" : `Start Order for ${selectedTable.number}`}
+                  <IconPosTerminal size={18} /> {selectedTable.status === "OCCUPIED" ? "View / Add to Order" : `Start Order for ${selectedTable.number}`}
                 </button>
               </div>
             )}
 
             {/* Active Order Details */}
             {selectedTable.status === "OCCUPIED" && (
-              <div style={{ background: "#faf7f4", padding: "12px", borderRadius: "12px", marginBottom: "16px" }}>
-                <h5 style={{ margin: "0 0 6px" }}>Current Seated Order</h5>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+              <div style={{ background: "var(--surface-warm)", padding: "14px", borderRadius: "12px", marginBottom: "16px", border: "1px solid var(--border-light)" }}>
+                <h5 style={{ margin: "0 0 8px", color: "var(--primary)" }}>Current Active Order</h5>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                   <span>Order Total:</span>
-                  <strong>${(selectedTable.active_order_total || 0).toFixed(2)}</strong>
+                  <strong>{formatCurrency(selectedTable.active_order_total || 0)}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginTop: "4px" }}>
-                  <span>Seated Since:</span>
+                  <span style={{ color: "var(--text-secondary)" }}>Seated Since:</span>
                   <span>{new Date(selectedTable.active_order_created_at || "").toLocaleTimeString()}</span>
                 </div>
                 {selectedTable.customer_name && (
@@ -930,34 +964,34 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                   className="btn-success btn-sm"
                   onClick={() => handleManualStatusChange(selectedTable.id, "FREE")}
                 >
-                  🟢 Mark Free
+                  <IconCheck size={14} /> Mark Free
                 </button>
                 <button
                   type="button"
                   className="btn-danger btn-sm"
                   onClick={() => handleManualStatusChange(selectedTable.id, "OCCUPIED")}
                 >
-                  🔴 Mark Occupied
+                  <IconUsers size={14} /> Mark Occupied
                 </button>
                 <button
                   type="button"
                   className="btn-warning btn-sm"
                   onClick={() => handleManualStatusChange(selectedTable.id, "NEEDS_CLEANING")}
                 >
-                  🟡 Needs Cleaning
+                  <IconAlert size={14} /> Needs Cleaning
                 </button>
                 <button
                   type="button"
                   className="btn-secondary btn-sm"
                   onClick={() => handleManualStatusChange(selectedTable.id, "RESERVED")}
                 >
-                  🔵 Reserved
+                  <IconClock size={14} /> Reserved
                 </button>
               </div>
             </div>
 
-            <div className="modal-actions">
-              <button type="button" className="btn-secondary" onClick={() => setIsActionModalOpen(false)}>
+            <div className="modal-actions" style={{ marginTop: "16px" }}>
+              <button type="button" className="btn-secondary" style={{ width: "100%" }} onClick={() => setIsActionModalOpen(false)}>
                 Close
               </button>
             </div>

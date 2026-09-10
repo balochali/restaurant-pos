@@ -142,7 +142,7 @@ async function main() {
       categoryId: IDS.catBurgers,
       name: "Classic Burger",
       description: "Juicy beef patty with lettuce, tomato, and pickles",
-      basePrice: 8.99,
+      basePrice: 450,
       taxRate: 0.08,
     },
     {
@@ -150,7 +150,7 @@ async function main() {
       categoryId: IDS.catBurgers,
       name: "Cheese Burger",
       description: "Classic burger topped with melted cheddar cheese",
-      basePrice: 9.99,
+      basePrice: 550,
       taxRate: 0.08,
     },
     {
@@ -158,7 +158,7 @@ async function main() {
       categoryId: IDS.catBurgers,
       name: "BBQ Bacon Burger",
       description: "Smoked beef patty with crispy bacon and smoky BBQ sauce",
-      basePrice: 12.99,
+      basePrice: 750,
       taxRate: 0.08,
     },
     // Drinks
@@ -167,7 +167,7 @@ async function main() {
       categoryId: IDS.catDrinks,
       name: "Coca Cola",
       description: "Ice-cold Coca Cola — choose your size",
-      basePrice: 2.99,
+      basePrice: 150,
       taxRate: 0.05,
     },
     {
@@ -175,7 +175,7 @@ async function main() {
       categoryId: IDS.catDrinks,
       name: "Fresh Lemonade",
       description: "Freshly squeezed lemonade — choose your size",
-      basePrice: 3.49,
+      basePrice: 200,
       taxRate: 0.05,
     },
     {
@@ -183,7 +183,7 @@ async function main() {
       categoryId: IDS.catDrinks,
       name: "Iced Tea",
       description: "Chilled sweet iced tea — choose your size",
-      basePrice: 2.79,
+      basePrice: 180,
       taxRate: 0.05,
     },
     // Sides
@@ -192,7 +192,7 @@ async function main() {
       categoryId: IDS.catSides,
       name: "French Fries",
       description: "Golden crispy fries with sea salt",
-      basePrice: 3.99,
+      basePrice: 200,
       taxRate: 0.08,
     },
     {
@@ -200,7 +200,7 @@ async function main() {
       categoryId: IDS.catSides,
       name: "Onion Rings",
       description: "Beer-battered crispy onion rings",
-      basePrice: 4.49,
+      basePrice: 250,
       taxRate: 0.08,
     },
     // Desserts
@@ -209,7 +209,7 @@ async function main() {
       categoryId: IDS.catDesserts,
       name: "Chocolate Brownie",
       description: "Warm chocolate brownie with vanilla drizzle",
-      basePrice: 5.99,
+      basePrice: 350,
       taxRate: 0.08,
     },
     {
@@ -217,7 +217,7 @@ async function main() {
       categoryId: IDS.catDesserts,
       name: "Vanilla Ice Cream",
       description: "Three scoops of classic vanilla ice cream",
-      basePrice: 4.99,
+      basePrice: 300,
       taxRate: 0.08,
     },
   ];
@@ -236,15 +236,15 @@ async function main() {
   console.log("📏 Seeding item variants (drink sizes)...");
 
   const variants = [
-    { id: IDS.varCokeSmall, menuItemId: IDS.itemCoke, name: "Small", price: 1.99 },
-    { id: IDS.varCokeMedium, menuItemId: IDS.itemCoke, name: "Medium", price: 2.99 },
-    { id: IDS.varCokeLarge, menuItemId: IDS.itemCoke, name: "Large", price: 3.99 },
-    { id: IDS.varLemonSmall, menuItemId: IDS.itemLemonade, name: "Small", price: 2.49 },
-    { id: IDS.varLemonMedium, menuItemId: IDS.itemLemonade, name: "Medium", price: 3.49 },
-    { id: IDS.varLemonLarge, menuItemId: IDS.itemLemonade, name: "Large", price: 4.49 },
-    { id: IDS.varTeaSmall, menuItemId: IDS.itemIcedTea, name: "Small", price: 1.79 },
-    { id: IDS.varTeaMedium, menuItemId: IDS.itemIcedTea, name: "Medium", price: 2.79 },
-    { id: IDS.varTeaLarge, menuItemId: IDS.itemIcedTea, name: "Large", price: 3.79 },
+    { id: IDS.varCokeSmall, menuItemId: IDS.itemCoke, name: "Small", price: 120 },
+    { id: IDS.varCokeMedium, menuItemId: IDS.itemCoke, name: "Medium", price: 150 },
+    { id: IDS.varCokeLarge, menuItemId: IDS.itemCoke, name: "Large", price: 180 },
+    { id: IDS.varLemonSmall, menuItemId: IDS.itemLemonade, name: "Small", price: 150 },
+    { id: IDS.varLemonMedium, menuItemId: IDS.itemLemonade, name: "Medium", price: 200 },
+    { id: IDS.varLemonLarge, menuItemId: IDS.itemLemonade, name: "Large", price: 250 },
+    { id: IDS.varTeaSmall, menuItemId: IDS.itemIcedTea, name: "Small", price: 120 },
+    { id: IDS.varTeaMedium, menuItemId: IDS.itemIcedTea, name: "Medium", price: 180 },
+    { id: IDS.varTeaLarge, menuItemId: IDS.itemIcedTea, name: "Large", price: 220 },
   ];
 
   for (const variant of variants) {
@@ -261,9 +261,9 @@ async function main() {
   console.log("🧂 Seeding modifiers...");
 
   const modifiers = [
-    { id: IDS.modExtraCheese, name: "Extra Cheese", priceAdjustment: 1.5 },
+    { id: IDS.modExtraCheese, name: "Extra Cheese", priceAdjustment: 80 },
     { id: IDS.modNoOnions, name: "No Onions", priceAdjustment: 0 },
-    { id: IDS.modExtraSauce, name: "Extra Sauce", priceAdjustment: 0.5 },
+    { id: IDS.modExtraSauce, name: "Extra Sauce", priceAdjustment: 30 },
     { id: IDS.modSpicy, name: "Spicy", priceAdjustment: 0 },
     { id: IDS.modWellDone, name: "Well Done", priceAdjustment: 0 },
   ];

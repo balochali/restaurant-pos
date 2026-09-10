@@ -8,6 +8,16 @@ import {
   deleteStaffUser,
 } from "../lib/userService";
 import { useAuth } from "../store/useAuth";
+import {
+  IconUsers,
+  IconCrown,
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconCheck,
+  IconAlert,
+  IconClose,
+} from "./Icons";
 
 const ROLES: Role[] = ["ADMIN", "MANAGER", "CASHIER", "WAITER", "KITCHEN_STAFF"];
 
@@ -168,53 +178,63 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="card full-width-card">
-      <div className="card-header-row">
+    <div className="card full-width-card" style={{ padding: "20px" }}>
+      <div className="card-header-row" style={{ marginBottom: "16px" }}>
         <div>
-          <h4>Staff Accounts</h4>
-          <p className="subtitle">Manage team members, roles, and PIN access</p>
+          <h4>Staff & Cashier Management</h4>
+          <p className="subtitle">Manage team members, roles, permissions, and PIN access</p>
         </div>
-        <button type="button" className="btn-primary" onClick={openAddModal}>
-          + Add New Staff Member
+        <button type="button" className="btn-primary" onClick={openAddModal} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <IconPlus size={16} /> Add Staff Member
         </button>
       </div>
 
       {error && (
-        <div className="pin-error" onClick={() => setError(null)}>
-          {error} (click to dismiss)
+        <div className="pin-error" onClick={() => setError(null)} style={{ cursor: "pointer", marginBottom: "14px" }}>
+          <IconAlert size={16} /> {error} (click to dismiss)
         </div>
       )}
       {success && (
-        <div className="success-banner" onClick={() => setSuccess(null)}>
-          ✅ {success} (click to dismiss)
+        <div className="success-banner" onClick={() => setSuccess(null)} style={{ cursor: "pointer", marginBottom: "14px" }}>
+          <IconCheck size={16} /> {success} (click to dismiss)
         </div>
       )}
 
       {loading ? (
-        <p>Loading staff accounts...</p>
+        <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+          <IconUsers size={32} color="var(--primary)" />
+          <p style={{ marginTop: "8px" }}>Loading staff accounts...</p>
+        </div>
       ) : (
-        <div className="table-responsive">
-          <table className="staff-table">
+        <div className="table-responsive" style={{ border: "1px solid var(--border-light)", borderRadius: "14px", overflow: "hidden" }}>
+          <table className="staff-table" style={{ margin: 0 }}>
             <thead>
               <tr>
                 <th>Staff Name</th>
                 <th>Username</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className={u.is_active === 0 ? "row-inactive" : ""}>
                   <td>
-                    <div className="user-cell">
-                      <div className="avatar-sm">{u.name.charAt(0)}</div>
-                      <span>{u.name}</span>
+                    <div className="user-cell" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div className="avatar-sm" style={{ background: u.role === "ADMIN" ? "var(--primary)" : "var(--secondary)", color: "#fff", fontWeight: "700" }}>
+                        {u.name.charAt(0)}
+                      </div>
+                      <div>
+                        <strong>{u.name}</strong>
+                        {u.role === "ADMIN" && <IconCrown size={12} color="#D97706" style={{ marginLeft: "4px" }} />}
+                      </div>
                     </div>
                   </td>
                   <td>
-                    <code>{u.username}</code>
+                    <code style={{ background: "var(--surface-warm)", padding: "3px 8px", borderRadius: "6px", fontSize: "12px" }}>
+                      {u.username}
+                    </code>
                   </td>
                   <td>
                     <span className={`role-pill role-${u.role}`}>{u.role}</span>
@@ -224,14 +244,14 @@ export default function UserManagement() {
                       {u.is_active === 1 ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td>
-                    <div className="action-buttons">
+                  <td style={{ textAlign: "right" }}>
+                    <div className="action-buttons" style={{ justifyContent: "flex-end" }}>
                       <button
                         type="button"
                         className="btn-secondary btn-sm"
                         onClick={() => openEditModal(u)}
                       >
-                        Edit
+                        <IconEdit size={13} /> Edit
                       </button>
                       <button
                         type="button"
@@ -246,7 +266,7 @@ export default function UserManagement() {
                         onClick={() => handleDelete(u)}
                         disabled={u.id === currentUser?.id}
                       >
-                        Delete
+                        <IconTrash size={13} />
                       </button>
                     </div>
                   </td>
@@ -260,10 +280,19 @@ export default function UserManagement() {
       {/* Modal Dialog for Add / Edit */}
       {isModalOpen && (
         <div className="modal-backdrop">
-          <div className="modal-content">
-            <h3>{editingUser ? "Edit Staff Member" : "Add New Staff Member"}</h3>
+          <div className="modal-content" style={{ maxWidth: "460px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0 }}>{editingUser ? "Edit Staff Member" : "Add New Staff Member"}</h3>
+              <button
+                type="button"
+                onClick={closeModal}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+              >
+                <IconClose size={20} />
+              </button>
+            </div>
 
-            {formError && <div className="pin-error">{formError}</div>}
+            {formError && <div className="pin-error" style={{ marginBottom: "12px" }}>{formError}</div>}
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
@@ -314,8 +343,8 @@ export default function UserManagement() {
               </div>
 
               {editingUser && (
-                <div className="form-group checkbox-group">
-                  <label>
+                <div className="form-group checkbox-group" style={{ marginTop: "12px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                     <input
                       type="checkbox"
                       checked={isActive === 1}
@@ -326,12 +355,12 @@ export default function UserManagement() {
                 </div>
               )}
 
-              <div className="modal-actions">
+              <div className="modal-actions" style={{ marginTop: "20px" }}>
                 <button type="button" className="btn-secondary" onClick={closeModal}>
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editingUser ? "Save Changes" : "Create Staff Account"}
+                  <IconCheck size={16} /> {editingUser ? "Save Changes" : "Create Staff Account"}
                 </button>
               </div>
             </form>

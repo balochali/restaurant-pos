@@ -6,6 +6,7 @@ export interface DbCategory {
   name: string;
   display_order: number;
   is_active: number;
+  image_url: string | null;
   available_from?: string | null;
   available_until?: string | null;
   synced_at: string | null;
@@ -86,11 +87,11 @@ export async function ensureInitialMenuData(): Promise<void> {
 
   await db.execute(
     `INSERT INTO menu_items (id, category_id, name, description, base_price, tax_rate, is_available, is_combo) VALUES
-     (?, ?, 'Classic Burger', 'Juicy beef patty with lettuce, tomato, and pickles', 8.99, 0.08, 1, 0),
-     (?, ?, 'Cheese Burger', 'Classic burger topped with melted cheddar cheese', 9.99, 0.08, 1, 0),
-     (?, ?, 'Coca Cola', 'Ice-cold refreshing cola beverage', 2.99, 0.05, 1, 0),
-     (?, ?, 'French Fries', 'Golden crispy fries with sea salt', 3.99, 0.08, 1, 0),
-     (?, ?, 'Super Combo Meal', 'Classic Burger + French Fries + Coca Cola Bundle', 12.99, 0.08, 1, 1)`,
+     (?, ?, 'Classic Burger', 'Juicy beef patty with lettuce, tomato, and pickles', 450, 0.08, 1, 0),
+     (?, ?, 'Cheese Burger', 'Classic burger topped with melted cheddar cheese', 550, 0.08, 1, 0),
+     (?, ?, 'Coca Cola', 'Ice-cold refreshing cola beverage', 150, 0.05, 1, 0),
+     (?, ?, 'French Fries', 'Golden crispy fries with sea salt', 200, 0.08, 1, 0),
+     (?, ?, 'Super Combo Meal', 'Classic Burger + French Fries + Coca Cola Bundle', 950, 0.08, 1, 1)`,
     [
       itemClassic,
       catBurgers,
@@ -108,9 +109,9 @@ export async function ensureInitialMenuData(): Promise<void> {
   // Drink Variants (T-024)
   await db.execute(
     `INSERT INTO item_variants (id, menu_item_id, name, price, is_active) VALUES
-     (?, ?, 'Small (12oz)', 1.99, 1),
-     (?, ?, 'Medium (16oz)', 2.99, 1),
-     (?, ?, 'Large (24oz)', 3.99, 1)`,
+     (?, ?, 'Small (12oz)', 120, 1),
+     (?, ?, 'Medium (16oz)', 150, 1),
+     (?, ?, 'Large (24oz)', 180, 1)`,
     [
       crypto.randomUUID(),
       itemCoke,
@@ -128,9 +129,9 @@ export async function ensureInitialMenuData(): Promise<void> {
 
   await db.execute(
     `INSERT INTO modifiers (id, name, price_adjustment, is_active) VALUES
-     (?, 'Extra Cheese', 1.50, 1),
+     (?, 'Extra Cheese', 80, 1),
      (?, 'No Onions', 0.00, 1),
-     (?, 'Extra Sauce', 0.50, 1)`,
+     (?, 'Extra Sauce', 30, 1)`,
     [modCheese, modOnions, modSauce],
   );
 
@@ -157,7 +158,7 @@ export async function getCategories(): Promise<DbCategory[]> {
   await ensureInitialMenuData();
   const db = await getDb();
   return db.select<DbCategory[]>(
-    "SELECT id, name, display_order, is_active, available_from, available_until, synced_at FROM menu_categories ORDER BY display_order ASC, name ASC",
+    "SELECT id, name, display_order, is_active, image_url, available_from, available_until, synced_at FROM menu_categories ORDER BY display_order ASC, name ASC",
   );
 }
 
@@ -166,6 +167,7 @@ export async function createCategory(
   performedByUserId: string,
   availableFrom?: string | null,
   availableUntil?: string | null,
+  imageUrl?: string | null,
 ): Promise<DbCategory> {
   const db = await getDb();
   const id = crypto.randomUUID();
@@ -177,8 +179,8 @@ export async function createCategory(
   const nextOrder = (maxRes[0]?.maxOrder || 0) + 1;
 
   await db.execute(
-    "INSERT INTO menu_categories (id, name, display_order, is_active, available_from, available_until) VALUES (?, ?, ?, 1, ?, ?)",
-    [id, name.trim(), nextOrder, availableFrom || null, availableUntil || null],
+    "INSERT INTO menu_categories (id, name, display_order, is_active, image_url, available_from, available_until) VALUES (?, ?, ?, 1, ?, ?, ?)",
+    [id, name.trim(), nextOrder, imageUrl || null, availableFrom || null, availableUntil || null],
   );
 
   await logAuditEvent({
@@ -193,6 +195,7 @@ export async function createCategory(
     name: name.trim(),
     display_order: nextOrder,
     is_active: 1,
+    image_url: imageUrl || null,
     available_from: availableFrom || null,
     available_until: availableUntil || null,
     synced_at: null,
@@ -206,11 +209,12 @@ export async function updateCategory(
   performedByUserId: string,
   availableFrom?: string | null,
   availableUntil?: string | null,
+  imageUrl?: string | null,
 ): Promise<void> {
   const db = await getDb();
   await db.execute(
-    "UPDATE menu_categories SET name = ?, is_active = ?, available_from = ?, available_until = ? WHERE id = ?",
-    [name.trim(), isActive, availableFrom || null, availableUntil || null, id],
+    "UPDATE menu_categories SET name = ?, is_active = ?, image_url = ?, available_from = ?, available_until = ? WHERE id = ?",
+    [name.trim(), isActive, imageUrl || null, availableFrom || null, availableUntil || null, id],
   );
 
   await logAuditEvent({
