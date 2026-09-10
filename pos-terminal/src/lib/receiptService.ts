@@ -1,4 +1,5 @@
 import { DbOrder, DbOrderItem } from "./orderService";
+import { formatCurrency } from "./formatCurrency";
 
 export interface ReceiptData {
   order: DbOrder;
@@ -35,19 +36,20 @@ export function generateCustomerReceiptHtml(data: ReceiptData): string {
 
   const itemRows = items
     .map((item) => {
-      const lineTotal = (item.quantity * item.unit_price).toFixed(2);
+      const lineTotal = formatCurrency(item.quantity * item.unit_price);
+      const itemName = item.item_name || "Item";
       const modNote = item.modifiers ? `<div style="font-size: 11px; color: #555; padding-left: 8px;">+ ${item.modifiers}</div>` : "";
       const note = item.notes ? `<div style="font-size: 11px; font-style: italic; color: #666; padding-left: 8px;">"${item.notes}"</div>` : "";
 
       return `
         <tr>
           <td style="padding: 4px 0; vertical-align: top;">
-            <div><strong>${item.quantity}x</strong> ${item.menu_item_id ? (item as any).name || "Item" : "Item"}</div>
+            <div><strong>${item.quantity}x</strong> ${itemName}</div>
             ${modNote}
             ${note}
           </td>
           <td style="text-align: right; padding: 4px 0; vertical-align: top; white-space: nowrap;">
-            $${lineTotal}
+            ${lineTotal}
           </td>
         </tr>
       `;
@@ -91,36 +93,36 @@ export function generateCustomerReceiptHtml(data: ReceiptData): string {
       <div style="border-top: 1px dashed #000; padding-top: 6px; margin-bottom: 8px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
           <span>Subtotal:</span>
-          <span>$${order.subtotal.toFixed(2)}</span>
+          <span>${formatCurrency(order.subtotal)}</span>
         </div>
         ${
           order.discount > 0
             ? `<div style="display: flex; justify-content: space-between; margin-bottom: 2px; color: #d00;">
                 <span>Discount:</span>
-                <span>-$${order.discount.toFixed(2)}</span>
+                <span>-${formatCurrency(order.discount)}</span>
               </div>`
             : ""
         }
         <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
           <span>Tax:</span>
-          <span>$${order.tax.toFixed(2)}</span>
+          <span>${formatCurrency(order.tax)}</span>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; border-top: 1px solid #000; padding-top: 4px; margin-top: 4px;">
           <span>TOTAL:</span>
-          <span>$${order.total.toFixed(2)}</span>
+          <span>${formatCurrency(order.total)}</span>
         </div>
       </div>
 
       <div style="border-top: 1px dashed #000; padding-top: 6px; font-size: 11px; margin-bottom: 12px;">
         <div style="display: flex; justify-content: space-between;">
           <span>Payment (${paymentMethod}):</span>
-          <span>$${Number(amountPaid).toFixed(2)}</span>
+          <span>${formatCurrency(Number(amountPaid))}</span>
         </div>
         ${
           changeDue > 0
             ? `<div style="display: flex; justify-content: space-between; font-weight: bold;">
                 <span>Change Due:</span>
-                <span>$${Number(changeDue).toFixed(2)}</span>
+                <span>${formatCurrency(Number(changeDue))}</span>
               </div>`
             : ""
         }
@@ -154,13 +156,14 @@ export function generateKitchenTicketHtml(data: ReceiptData): string {
 
   const itemRows = items
     .map((item) => {
+      const itemName = item.item_name || "Item";
       const modNote = item.modifiers ? `<div style="font-size: 13px; font-weight: bold; color: #111; margin-left: 12px;">⚡ ${item.modifiers}</div>` : "";
       const note = item.notes ? `<div style="font-size: 13px; font-weight: bold; background: #eee; padding: 2px 4px; border-radius: 3px; margin-top: 2px; margin-left: 12px;">NOTE: ${item.notes}</div>` : "";
 
       return `
         <li style="margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 6px;">
           <div style="display: flex; align-items: baseline; justify-content: space-between;">
-            <span style="font-size: 16px; font-weight: 900;">[ ${item.quantity}x ] ${(item as any).name || "Item"}</span>
+            <span style="font-size: 16px; font-weight: 900;">[ ${item.quantity}x ] ${itemName}</span>
             <span style="font-size: 11px; text-transform: uppercase; border: 1px solid #000; padding: 1px 4px; border-radius: 2px;">${item.status || "NEW"}</span>
           </div>
           ${modNote}

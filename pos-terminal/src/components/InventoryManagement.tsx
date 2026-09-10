@@ -7,6 +7,7 @@ import {
   adjustStock,
   deleteInventoryItem,
 } from "../lib/inventoryService";
+import { formatCurrency } from "../lib/formatCurrency";
 import { useAuth } from "../store/useAuth";
 import {
   IconInventory,
@@ -226,7 +227,7 @@ export default function InventoryManagement() {
           </div>
           <div>
             <div className="stat-value" style={{ color: "var(--secondary)" }}>
-              ${totalStockValue.toFixed(2)}
+              {formatCurrency(totalStockValue)}
             </div>
             <div className="stat-label">Estimated Stock Value</div>
           </div>
@@ -397,7 +398,7 @@ export default function InventoryManagement() {
                       {item.min_threshold} {item.unit}
                     </td>
                     <td style={{ textAlign: "right", fontWeight: "600" }}>
-                      ${Number(item.cost_per_unit || 0).toFixed(2)}
+                      {formatCurrency(Number(item.cost_per_unit || 0))}
                     </td>
                     <td style={{ textAlign: "center" }}>
                       <div style={{ display: "inline-flex", gap: "4px" }}>
@@ -542,7 +543,7 @@ export default function InventoryManagement() {
               </div>
 
               <div className="form-group">
-                <label>Cost per Unit ($)</label>
+                <label>Cost per Unit (Rs.)</label>
                 <input
                   type="number"
                   min="0"

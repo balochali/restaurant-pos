@@ -62,12 +62,16 @@ async function runMigrations(database: Database): Promise<void> {
       name            TEXT NOT NULL,
       display_order   INTEGER NOT NULL DEFAULT 0,
       is_active       INTEGER NOT NULL DEFAULT 1,
+      image_url       TEXT,
       available_from  TEXT,
       available_until TEXT,
       synced_at       TEXT
     )
   `);
 
+  try {
+    await database.execute(`ALTER TABLE menu_categories ADD COLUMN image_url TEXT`);
+  } catch {}
   try {
     await database.execute(`ALTER TABLE menu_categories ADD COLUMN available_from TEXT`);
   } catch {}
@@ -409,14 +413,14 @@ async function runMigrations(database: Database): Promise<void> {
 
   if (invCount[0].c === 0) {
     const demoStock = [
-      { name: "Burger Buns (Pack)", category: "Bakery", unit: "pack", current_stock: 45, min_threshold: 10, cost_per_unit: 2.5 },
-      { name: "Beef Patties (150g)", category: "Meat", unit: "pcs", current_stock: 30, min_threshold: 15, cost_per_unit: 3.2 },
-      { name: "Chicken Breast Fillet", category: "Meat", unit: "kg", current_stock: 18, min_threshold: 5, cost_per_unit: 7.0 },
-      { name: "Cheddar Cheese Slices", category: "Dairy", unit: "pack", current_stock: 8, min_threshold: 10, cost_per_unit: 4.5 },
-      { name: "French Fries (Frozen)", category: "Sides", unit: "kg", current_stock: 25, min_threshold: 8, cost_per_unit: 3.0 },
-      { name: "Espresso Coffee Beans", category: "Beverage", unit: "kg", current_stock: 4, min_threshold: 5, cost_per_unit: 14.0 },
-      { name: "Full Cream Milk", category: "Dairy", unit: "liters", current_stock: 20, min_threshold: 6, cost_per_unit: 1.8 },
-      { name: "Coca Cola Cans (330ml)", category: "Beverage", unit: "cans", current_stock: 60, min_threshold: 24, cost_per_unit: 0.8 },
+      { name: "Burger Buns (Pack)", category: "Bakery", unit: "pack", current_stock: 45, min_threshold: 10, cost_per_unit: 250 },
+      { name: "Beef Patties (150g)", category: "Meat", unit: "pcs", current_stock: 30, min_threshold: 15, cost_per_unit: 320 },
+      { name: "Chicken Breast Fillet", category: "Meat", unit: "kg", current_stock: 18, min_threshold: 5, cost_per_unit: 700 },
+      { name: "Cheddar Cheese Slices", category: "Dairy", unit: "pack", current_stock: 8, min_threshold: 10, cost_per_unit: 450 },
+      { name: "French Fries (Frozen)", category: "Sides", unit: "kg", current_stock: 25, min_threshold: 8, cost_per_unit: 300 },
+      { name: "Espresso Coffee Beans", category: "Beverage", unit: "kg", current_stock: 4, min_threshold: 5, cost_per_unit: 1400 },
+      { name: "Full Cream Milk", category: "Dairy", unit: "liters", current_stock: 20, min_threshold: 6, cost_per_unit: 180 },
+      { name: "Coca Cola Cans (330ml)", category: "Beverage", unit: "cans", current_stock: 60, min_threshold: 24, cost_per_unit: 80 },
     ];
 
     const now = new Date().toISOString();

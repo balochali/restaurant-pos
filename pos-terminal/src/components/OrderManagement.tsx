@@ -22,6 +22,7 @@ import {
   REOPEN_WINDOW_MINUTES,
   processOrderPayment,
 } from "../lib/orderService";
+import { formatCurrency } from "../lib/formatCurrency";
 import {
   DbCategory,
   DbMenuItem,
@@ -98,6 +99,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [menuSearchQuery, setMenuSearchQuery] = useState("");
   const [cart, setCart] = useState<CartDraftItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
 
   // Item Customization Modal (Variants / Modifiers)
   const [customizingItem, setCustomizingItem] = useState<DbMenuItem | null>(null);
@@ -370,6 +372,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
         changeDue: 0,
       });
       setReceiptModalType("CUSTOMER");
+      setSuccess(`Customer receipt for Order #${order.id.slice(0, 8)} is ready to print.`);
     } catch (err) {
       setError("Failed to load receipt items: " + String(err));
     }
@@ -386,6 +389,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
         cashierName: order.created_by_name || currentUser?.name || "Cashier",
       });
       setReceiptModalType("KITCHEN");
+      setSuccess(`Kitchen ticket for Order #${order.id.slice(0, 8)} is ready to print.`);
     } catch (err) {
       setError("Failed to load kitchen ticket items: " + String(err));
     }
@@ -409,7 +413,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
   const handleProcessPaymentSubmit = async () => {
     if (!currentUser || !paymentModalOrder) return;
     if (paymentTendered < paymentModalOrder.total) {
-      setPaymentError(`Tendered amount must be at least $${paymentModalOrder.total.toFixed(2)}.`);
+      setPaymentError(`Tendered amount must be at least ${formatCurrency(paymentModalOrder.total)}.`);
       return;
     }
 
@@ -629,7 +633,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
       <div className="card-header-row">
         <div>
           <h4>Order Management System</h4>
-          <p className="subtitle">Create orders, send to kitchen, track lifecycle, and table operations</p>
+          <p className="subtitle">Create takeaway orders, send them to the kitchen, and complete payment.</p>
         </div>
       </div>
 
@@ -651,21 +655,14 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
           className={`sub-nav-tab ${activeSubtab === "new_order" ? "active" : ""}`}
           onClick={() => setActiveSubtab("new_order")}
         >
-          ➕ New Order & Cart
+          <IconPlus size={16} /> Take Order
         </button>
         <button
           type="button"
           className={`sub-nav-tab ${activeSubtab === "active_orders" ? "active" : ""}`}
           onClick={() => setActiveSubtab("active_orders")}
         >
-          📋 Active Orders ({openOrders.length})
-        </button>
-        <button
-          type="button"
-          className={`sub-nav-tab ${activeSubtab === "table_operations" ? "active" : ""}`}
-          onClick={() => setActiveSubtab("table_operations")}
-        >
-          🔀 Table & Bill Operations
+          <IconReceipt size={16} /> Active Orders ({openOrders.length})
         </button>
       </div>
 
@@ -673,7 +670,8 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
       {/* SUBTAB 1: NEW ORDER & CART BUILDER (T-029, T-030, T-031, T-032)         */}
       {/* ─────────────────────────────────────────────────────────────────────── */}
       {activeSubtab === "new_order" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "20px", marginTop: "16px" }}>
+        <>
+          <div className="pos-order-layout">
           {/* LEFT: Order Type + Table Selection + Menu Browser */}
           <div>
             {/* Step 1: Order Type Selector */}
@@ -761,7 +759,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
 
               {/* Takeaway / Delivery Customer Info */}
               {(orderSource === "TAKEAWAY" || orderSource === "DELIVERY") && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "14px" }}>
+                <div className="order-customer-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "14px" }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label>Customer Name</label>
                     <input
@@ -844,7 +842,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
               </div>
 
               {/* Menu Grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: "14px" }}>
+              <div className="menu-item-grid">
                 {availableMenuItems.map((item) => (
                   <div
                     key={item.id}
@@ -887,7 +885,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
                       <span className="item-price-tag">
-                        ${item.base_price.toFixed(2)}
+                        {formatCurrency(item.base_price)}
                       </span>
                       <span style={{ fontSize: "12px", color: "var(--green)", fontWeight: "700", display: "flex", alignItems: "center", gap: "2px" }}>
                         <IconPlus size={14} /> Add
@@ -958,7 +956,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                           )}
                         </div>
                         <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>
-                          ${(cItem.unitPrice * cItem.quantity).toFixed(2)}
+                          {formatCurrency(cItem.unitPrice * cItem.quantity)}
                         </span>
                       </div>
 
@@ -1002,15 +1000,15 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             <div style={{ marginTop: "auto", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
                 <span>Subtotal</span>
-                <strong>${cartSubtotal.toFixed(2)}</strong>
+                <strong>{formatCurrency(cartSubtotal)}</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "8px", color: "var(--text-secondary)" }}>
                 <span>Est. Tax (8%)</span>
-                <span>${cartTax.toFixed(2)}</span>
+                <span>{formatCurrency(cartTax)}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
                 <span>Total</span>
-                <span>${cartTotal.toFixed(2)}</span>
+                <span>{formatCurrency(cartTotal)}</span>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -1049,191 +1047,200 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             </div>
           </div>
         </div>
+
+        {/* ── Floating Cart Button (mobile only) ── */}
+        {cart.length > 0 && (
+          <button
+            type="button"
+            className="cart-fab"
+            onClick={() => setShowCart(true)}
+            aria-label={`View cart with ${cart.length} items`}
+          >
+            🛒 View Cart
+            <span className="cart-fab-badge">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
+          </button>
+        )}
+
+        {/* ── Mobile Cart Bottom Sheet ── */}
+        <div
+          className={`cart-sheet-overlay ${showCart ? "open" : ""}`}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCart(false); }}
+          aria-modal="true"
+          role="dialog"
+          aria-label="Order Cart"
+        >
+          <div className="cart-sheet">
+            <div className="cart-sheet-handle" />
+            {/* Render the same cart content inline */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h5 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "var(--bordo)" }}>🛒 Order Cart</h5>
+              <button
+                type="button"
+                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
+                onClick={() => setShowCart(false)}
+                aria-label="Close cart"
+              >✕</button>
+            </div>
+            <div style={{ padding: "8px 12px", background: "var(--cream-light)", border: "1px solid var(--cream-border)", borderRadius: "10px", fontSize: "12px", marginBottom: "14px" }}>
+              <strong>Source:</strong> {orderSource.replace("_", " ")}{" "}
+              {orderSource === "DINE_IN" && selectedTableId && (
+                <span style={{ color: "var(--bordo)", fontWeight: "700" }}>· Table {tables.find((t) => t.id === selectedTableId)?.number}</span>
+              )}
+            </div>
+            {cart.length === 0 ? (
+              <div style={{ padding: "36px 12px", textAlign: "center", color: "var(--text-muted)" }}>Cart is empty.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
+                {cart.map((cItem, idx) => (
+                  <div key={idx} className="cart-item-row">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <strong style={{ fontSize: "13px" }}>{cItem.menuItem.name}</strong>
+                        {cItem.selectedVariant && <div style={{ fontSize: "11px", color: "var(--bordo)" }}>Option: {cItem.selectedVariant.name}</div>}
+                        {cItem.selectedModifiers.length > 0 && <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>+ {cItem.selectedModifiers.map((m) => m.name).join(", ")}</div>}
+                      </div>
+                      <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>{`${(cItem.unitPrice * cItem.quantity).toFixed(2)}`}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <button type="button" className="stepper-btn" onClick={() => updateCartItemQty(idx, -1)}>−</button>
+                        <span style={{ fontWeight: "700", fontSize: "13px", minWidth: "20px", textAlign: "center" }}>{cItem.quantity}</span>
+                        <button type="button" className="stepper-btn" onClick={() => updateCartItemQty(idx, 1)}>+</button>
+                      </div>
+                      <button type="button" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }} onClick={() => removeCartItem(idx)} title="Remove">🗑</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: "16px", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                <span>Subtotal</span><strong>{`${cartSubtotal.toFixed(2)}`}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "8px", color: "var(--text-secondary)" }}>
+                <span>Est. Tax (8%)</span><span>{`${cartTax.toFixed(2)}`}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
+                <span>Total</span><span>{`${cartTotal.toFixed(2)}`}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  style={{ width: "100%", padding: "14px" }}
+                  disabled={cart.length === 0}
+                  onClick={() => { setShowCart(false); handlePlaceOrder(true, "KITCHEN"); }}
+                >
+                  🍽️ Kitchen & Print KOT
+                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <button type="button" className="btn-secondary" style={{ padding: "11px 6px", fontSize: "12px" }} disabled={cart.length === 0} onClick={() => { setShowCart(false); handlePlaceOrder(false, "CUSTOMER"); }}>🧾 Receipt</button>
+                  <button type="button" className="btn-secondary" style={{ padding: "11px 6px", fontSize: "12px" }} disabled={cart.length === 0} onClick={() => { setShowCart(false); handlePlaceOrder(false); }}>Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </>
       )}
 
       {/* ─────────────────────────────────────────────────────────────────────── */}
       {/* SUBTAB 2: ACTIVE ORDERS & STATE MACHINE (T-033, T-034)                   */}
       {/* ─────────────────────────────────────────────────────────────────────── */}
       {activeSubtab === "active_orders" && (
-        <div style={{ marginTop: "16px" }}>
-          {/* Status Filter Bar */}
-          <div className="card-header-row" style={{ marginBottom: "14px" }}>
-            <div className="filter-controls">
-              <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Filter Status:</label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                <option value="ALL">All Active ({openOrders.length})</option>
-                <option value="OPEN">Open</option>
-                <option value="SENT_TO_KITCHEN">Sent to Kitchen</option>
-                <option value="IN_PREP">In Preparation</option>
-                <option value="READY">Ready to Serve</option>
-                <option value="SERVED">Served</option>
-              </select>
+        <section className="active-orders-workspace">
+          <div className="active-orders-toolbar">
+            <div>
+              <span className="orders-eyebrow">Order queue</span>
+              <h5>Active orders</h5>
+              <p>{filteredActiveOrders.length} order{filteredActiveOrders.length === 1 ? "" : "s"} currently need attention.</p>
             </div>
-            <button type="button" className="btn-secondary" onClick={refreshData}>
-              🔄 Refresh List
-            </button>
+            <div className="active-orders-controls">
+              <label>
+                <IconFilter size={16} />
+                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter orders by status">
+                  <option value="ALL">All statuses</option>
+                  <option value="OPEN">Open</option>
+                  <option value="SENT_TO_KITCHEN">Sent to kitchen</option>
+                  <option value="IN_PREP">In preparation</option>
+                  <option value="READY">Ready</option>
+                  <option value="SERVED">Served</option>
+                </select>
+              </label>
+              <button type="button" className="btn-secondary" onClick={refreshData}>
+                Refresh
+              </button>
+            </div>
           </div>
 
           {filteredActiveOrders.length === 0 ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)" }}>
-              📭 No active orders found matching this filter.
+            <div className="active-orders-empty">
+              <IconReceipt size={34} color="var(--text-muted)" />
+              <h5>No active orders</h5>
+              <p>New orders will appear here when they are saved.</p>
+              <button type="button" className="btn-primary" onClick={() => setActiveSubtab("new_order")}>
+                <IconPlus size={16} /> Take an order
+              </button>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="staff-table">
-                <thead>
-                  <tr>
-                    <th>Order #</th>
-                    <th>Type / Table</th>
-                    <th>Customer / Staff</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredActiveOrders.map((ord) => {
-                    const nextStatus = ORDER_STATUS_FLOW[ord.status];
-                    return (
-                      <tr key={ord.id}>
-                        <td>
-                          <code>#{ord.id.slice(0, 8)}</code>
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                            {new Date(ord.created_locally_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </div>
-                        </td>
-                        <td>
-                          <strong>{ord.order_source.replace("_", " ")}</strong>
-                          {ord.table_number && (
-                            <span style={{ marginLeft: "6px" }} className="combo-badge">
-                              Table {ord.table_number}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          <div>{ord.customer_name || "Guest"}</div>
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>By: {ord.created_by_name || "Staff"}</div>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: "700" }}>{ord.item_count ?? 0}</span> items
-                        </td>
-                        <td>
-                          <strong style={{ color: "var(--accent)" }}>${ord.total.toFixed(2)}</strong>
-                        </td>
-                        <td>
-                          <span
-                            className="status-badge"
-                            style={{
-                              background:
-                                ord.status === "OPEN"
-                                  ? "#eff6ff"
-                                  : ord.status === "SENT_TO_KITCHEN"
-                                  ? "#fff8e1"
-                                  : ord.status === "IN_PREP"
-                                  ? "#fef3c7"
-                                  : ord.status === "READY"
-                                  ? "#edfaf4"
-                                  : "#f3f0ff",
-                              color:
-                                ord.status === "OPEN"
-                                  ? "#1d4ed8"
-                                  : ord.status === "SENT_TO_KITCHEN"
-                                  ? "#b45309"
-                                  : ord.status === "IN_PREP"
-                                  ? "#d97706"
-                                  : ord.status === "READY"
-                                  ? "#059669"
-                                  : "#6d28d9",
-                            }}
-                          >
-                            {ORDER_STATUS_LABELS[ord.status]}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons" style={{ flexWrap: "wrap", gap: "6px" }}>
-                            {/* Fast Checkout / Pay */}
-                            <button
-                              type="button"
-                              className="btn-success btn-sm"
-                              style={{ fontWeight: "700" }}
-                              onClick={() => handleOpenPayment(ord)}
-                              title="Process Payment & Close"
-                            >
-                              <IconCash size={14} color="#FFFFFF" />
-                              Pay
-                            </button>
+            <div className="active-order-card-list">
+              {filteredActiveOrders.map((ord) => {
+                const nextStatus = ORDER_STATUS_FLOW[ord.status];
+                return (
+                  <article key={ord.id} className="active-order-card">
+                    <div className="active-order-summary">
+                      <div className="active-order-id">
+                        <span>Order</span>
+                        <strong>#{ord.id.slice(0, 8)}</strong>
+                        <small>{new Date(ord.created_locally_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</small>
+                      </div>
+                      <div className="active-order-customer">
+                        <strong>{ord.customer_name || "Walk-in customer"}</strong>
+                        <span>{ord.order_source.replace("_", " ")} · {ord.item_count ?? 0} item{(ord.item_count ?? 0) === 1 ? "" : "s"}</span>
+                        <small>Cashier: {ord.created_by_name || "Staff"}</small>
+                      </div>
+                      <div className="active-order-total">
+                        <span>Total</span>
+                        <strong>{formatCurrency(ord.total)}</strong>
+                      </div>
+                      <span className={`active-order-status status-${ord.status.toLowerCase().replaceAll("_", "-")}`}>
+                        {ORDER_STATUS_LABELS[ord.status]}
+                      </span>
+                    </div>
 
-                            {/* Print KOT */}
-                            <button
-                              type="button"
-                              className="btn-secondary btn-sm"
-                              onClick={() => handlePrintKitchenTicket(ord)}
-                              title="Print Kitchen Order Ticket"
-                            >
-                              <IconChef size={14} />
-                              KOT
-                            </button>
-
-                            {/* Print Customer Receipt */}
-                            <button
-                              type="button"
-                              className="btn-secondary btn-sm"
-                              onClick={() => handlePrintCustomerReceipt(ord)}
-                              title="Print Customer Receipt"
-                            >
-                              <IconReceipt size={14} />
-                              Receipt
-                            </button>
-
-                            {ord.status === "OPEN" && (
-                              <button
-                                type="button"
-                                className="btn-primary btn-sm"
-                                onClick={() => handleSendToKitchen(ord.id)}
-                                title="Send order items to kitchen"
-                              >
-                                <IconChef size={14} color="#FFFFFF" />
-                                Send
-                              </button>
-                            )}
-
-                            {nextStatus && (
-                              <button
-                                type="button"
-                                className="btn-secondary btn-sm"
-                                onClick={() => handleAdvanceStatus(ord)}
-                              >
-                                ➔ {ORDER_STATUS_LABELS[nextStatus]}
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              className="btn-secondary btn-sm"
-                              onClick={() => handleOpenOrderDetails(ord)}
-                              title="View Items"
-                            >
-                              Items
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-danger btn-sm"
-                              onClick={() => openVoidOrderDialog(ord.id)}
-                              title="Void Order"
-                            >
-                              <IconClose size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    <div className="active-order-actions">
+                      <button type="button" className="btn-success btn-sm" onClick={() => handleOpenPayment(ord)}>
+                        <IconCash size={15} color="#FFFFFF" /> Pay
+                      </button>
+                      <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintKitchenTicket(ord)}>
+                        <IconChef size={15} /> KOT
+                      </button>
+                      <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintCustomerReceipt(ord)}>
+                        <IconReceipt size={15} /> Receipt
+                      </button>
+                      {ord.status === "OPEN" && (
+                        <button type="button" className="btn-primary btn-sm" onClick={() => handleSendToKitchen(ord.id)}>
+                          <IconChef size={15} color="#FFFFFF" /> Send to kitchen
+                        </button>
+                      )}
+                      {nextStatus && (
+                        <button type="button" className="btn-secondary btn-sm" onClick={() => handleAdvanceStatus(ord)}>
+                          {ORDER_STATUS_LABELS[nextStatus]}
+                        </button>
+                      )}
+                      <button type="button" className="btn-secondary btn-sm" onClick={() => handleOpenOrderDetails(ord)}>
+                        View items
+                      </button>
+                      <button type="button" className="active-order-void" onClick={() => openVoidOrderDialog(ord.id)} aria-label={`Void order ${ord.id.slice(0, 8)}`}>
+                        <IconClose size={15} />
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* ─────────────────────────────────────────────────────────────────────── */}
@@ -1254,7 +1261,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <option value="">Select source order...</option>
                 {openOrders.map((o) => (
                   <option key={o.id} value={o.id}>
-                    #{o.id.slice(0, 8)} - {o.order_source} {o.table_number ? `(Table ${o.table_number})` : ""} - ${o.total.toFixed(2)}
+                    #{o.id.slice(0, 8)} - {o.order_source} {o.table_number ? `(Table ${o.table_number})` : ""} - {formatCurrency(o.total)}
                   </option>
                 ))}
               </select>
@@ -1268,7 +1275,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                   .filter((o) => o.id !== mergeSourceId)
                   .map((o) => (
                     <option key={o.id} value={o.id}>
-                      #{o.id.slice(0, 8)} - {o.order_source} {o.table_number ? `(Table ${o.table_number})` : ""} - ${o.total.toFixed(2)}
+                      #{o.id.slice(0, 8)} - {o.order_source} {o.table_number ? `(Table ${o.table_number})` : ""} - {formatCurrency(o.total)}
                     </option>
                   ))}
               </select>
@@ -1298,7 +1305,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <option value="">Select order...</option>
                 {openOrders.map((o) => (
                   <option key={o.id} value={o.id}>
-                    #{o.id.slice(0, 8)} - {o.order_source} {o.table_number ? `(Table ${o.table_number})` : ""} - ${o.total.toFixed(2)}
+                    #{o.id.slice(0, 8)} - {o.order_source} {o.table_number ? `(Table ${o.table_number})` : ""} - {formatCurrency(o.total)}
                   </option>
                 ))}
               </select>
@@ -1337,7 +1344,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                             <strong>{item.quantity}x</strong> {item.item_name}
                           </span>
                         </div>
-                        <span style={{ fontWeight: "700" }}>${(item.unit_price * item.quantity).toFixed(2)}</span>
+                        <span style={{ fontWeight: "700" }}>{formatCurrency(item.unit_price * item.quantity)}</span>
                       </label>
                     );
                   })}
@@ -1395,7 +1402,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                               {elapsedMin} min ago
                             </span>
                           </td>
-                          <td>${ord.total.toFixed(2)}</td>
+                          <td>{formatCurrency(ord.total)}</td>
                           <td>
                             <span className="status-badge inactive">{ord.status}</span>
                           </td>
@@ -1454,7 +1461,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         />
                         <strong>{v.name}</strong>
                       </div>
-                      <span style={{ fontWeight: "700", color: "var(--accent)" }}>${v.price.toFixed(2)}</span>
+                      <span style={{ fontWeight: "700", color: "var(--accent)" }}>{formatCurrency(v.price)}</span>
                     </label>
                   ))}
                 </div>
@@ -1494,7 +1501,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                           <span>{mod.name}</span>
                         </div>
                         <span style={{ fontWeight: "600", color: "var(--text-secondary)" }}>
-                          +${mod.price_adjustment.toFixed(2)}
+                          +{formatCurrency(mod.price_adjustment)}
                         </span>
                       </label>
                     );
@@ -1585,7 +1592,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         {item.notes && <div style={{ fontSize: "11px", fontStyle: "italic" }}>"{item.notes}"</div>}
                       </td>
                       <td>{item.quantity}</td>
-                      <td>${(item.unit_price * item.quantity).toFixed(2)}</td>
+                      <td>{formatCurrency(item.unit_price * item.quantity)}</td>
                       <td>
                         <span className="status-badge active" style={{ fontSize: "10px" }}>
                           {item.status}
@@ -1608,7 +1615,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginTop: "16px", borderTop: "1px solid var(--border-color)", paddingTop: "14px" }}>
               <div style={{ fontSize: "16px" }}>
-                <strong>Total: ${selectedOrderDetails.total.toFixed(2)}</strong>
+                <strong>Total: {formatCurrency(selectedOrderDetails.total)}</strong>
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
@@ -1730,7 +1737,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-secondary)" }}>Total Amount Due:</span>
                 <span style={{ fontSize: "24px", fontWeight: "800", color: "var(--bordo)" }}>
-                  ${paymentModalOrder.total.toFixed(2)}
+                  {formatCurrency(paymentModalOrder.total)}
                 </span>
               </div>
             </div>
@@ -1769,7 +1776,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             </div>
 
             <div className="form-group" style={{ marginBottom: "14px" }}>
-              <label style={{ display: "block", marginBottom: "6px", fontWeight: "700" }}>Amount Tendered ($)</label>
+              <label style={{ display: "block", marginBottom: "6px", fontWeight: "700" }}>Amount Tendered (Rs.)</label>
               <input
                 type="number"
                 step="any"
@@ -1785,21 +1792,21 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                   className="btn-secondary btn-sm"
                   onClick={() => setPaymentTendered(paymentModalOrder.total)}
                 >
-                  Exact (${paymentModalOrder.total.toFixed(2)})
+                  Exact ({formatCurrency(paymentModalOrder.total)})
                 </button>
                 <button
                   type="button"
                   className="btn-secondary btn-sm"
-                  onClick={() => setPaymentTendered(Math.ceil(paymentModalOrder.total / 10) * 10)}
+                  onClick={() => setPaymentTendered(Math.ceil(paymentModalOrder.total / 100) * 100)}
                 >
-                  Round $10
+                  Round Rs. 100
                 </button>
                 <button
                   type="button"
                   className="btn-secondary btn-sm"
-                  onClick={() => setPaymentTendered(Math.ceil(paymentModalOrder.total / 50) * 50 || 50)}
+                  onClick={() => setPaymentTendered(Math.ceil(paymentModalOrder.total / 500) * 500 || 500)}
                 >
-                  $50
+                  Rs. 500
                 </button>
               </div>
             </div>
@@ -1825,7 +1832,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                   color: paymentTendered >= paymentModalOrder.total ? "var(--green)" : "var(--bordo)",
                 }}
               >
-                ${Math.max(0, paymentTendered - paymentModalOrder.total).toFixed(2)}
+                {formatCurrency(Math.max(0, paymentTendered - paymentModalOrder.total))}
               </span>
             </div>
 

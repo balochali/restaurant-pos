@@ -16,6 +16,7 @@ import {
   reserveTable,
 } from "../lib/tableService";
 import { DbUser } from "../lib/authService";
+import { formatCurrency } from "../lib/formatCurrency";
 import { useAuth } from "../store/useAuth";
 import {
   IconTable,
@@ -518,7 +519,7 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "700" }}>
-                          <span>Bill: ${(tbl.active_order_total || 0).toFixed(2)}</span>
+                          <span>Bill: {formatCurrency(tbl.active_order_total || 0)}</span>
                           <span style={{ color: "#c0392b" }}>
                             {getSeatedDuration(tbl.active_order_created_at)}
                           </span>
@@ -940,7 +941,7 @@ export default function TableManagement({ onSelectTable }: TableManagementProps 
                 <h5 style={{ margin: "0 0 8px", color: "var(--primary)" }}>Current Active Order</h5>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
                   <span>Order Total:</span>
-                  <strong>${(selectedTable.active_order_total || 0).toFixed(2)}</strong>
+                  <strong>{formatCurrency(selectedTable.active_order_total || 0)}</strong>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginTop: "4px" }}>
                   <span style={{ color: "var(--text-secondary)" }}>Seated Since:</span>

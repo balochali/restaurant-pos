@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useMemo, FormEvent } from "react";
 import {
   DbCategory,
   DbMenuItem,
@@ -25,6 +25,7 @@ import {
   isItemInTimeWindow,
   isCategoryInTimeWindow,
 } from "../lib/menuService";
+import { formatCurrency } from "../lib/formatCurrency";
 import { useAuth } from "../store/useAuth";
 import {
   IconMenu,
@@ -34,6 +35,8 @@ import {
   IconAlert,
   IconSearch,
   IconUtensils,
+  IconTrash,
+  IconClock,
 } from "./Icons";
 
 type MenuTab = "categories" | "items" | "variants_modifiers" | "combos";
@@ -88,11 +91,37 @@ export default function MenuManagement() {
 
   // ─── T-022 & T-028: CATEGORIES STATE & HANDLERS ──────────────────────────
   const [catName, setCatName] = useState("");
+  const [catImage, setCatImage] = useState("");
   const [catIsActive, setCatIsActive] = useState<number>(1);
   const [catFrom, setCatFrom] = useState("");
   const [catUntil, setCatUntil] = useState("");
   const [editingCategory, setEditingCategory] = useState<DbCategory | null>(null);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+
+  const handleCategoryImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Choose an image smaller than 2 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setCatImage(reader.result);
+        setError("");
+      }
+    };
+    reader.onerror = () => setError("The selected image could not be read.");
+    reader.readAsDataURL(file);
+  };
 
   const handleAddCategory = async (e: FormEvent) => {
     e.preventDefault();
@@ -107,6 +136,7 @@ export default function MenuManagement() {
           currentUser.id,
           catFrom.trim() || undefined,
           catUntil.trim() || undefined,
+          catImage.trim() || undefined,
         );
         setSuccess(`Category "${catName}" updated.`);
       } else {
@@ -115,6 +145,7 @@ export default function MenuManagement() {
           currentUser.id,
           catFrom.trim() || undefined,
           catUntil.trim() || undefined,
+          catImage.trim() || undefined,
         );
         if (catIsActive === 0) {
           await updateCategory(
@@ -124,12 +155,14 @@ export default function MenuManagement() {
             currentUser.id,
             catFrom.trim() || undefined,
             catUntil.trim() || undefined,
+            catImage.trim() || undefined,
           );
         }
         setSuccess(`Category "${catName}" created.`);
       }
       setIsCatModalOpen(false);
       setCatName("");
+      setCatImage("");
       setCatIsActive(1);
       setCatFrom("");
       setCatUntil("");
@@ -144,7 +177,15 @@ export default function MenuManagement() {
     if (!currentUser) return;
     try {
       const newStatus = category.is_active === 1 ? 0 : 1;
-      await updateCategory(category.id, category.name, newStatus, currentUser.id);
+      await updateCategory(
+        category.id,
+        category.name,
+        newStatus,
+        currentUser.id,
+        category.available_from,
+        category.available_until,
+        category.image_url,
+      );
       setSuccess(`Category "${category.name}" ${newStatus === 1 ? "activated" : "disabled"}.`);
       refreshAllData();
     } catch (err) {
@@ -183,6 +224,26 @@ export default function MenuManagement() {
     }
   };
 
+  const openAddCategoryModal = () => {
+    setEditingCategory(null);
+    setCatName("");
+    setCatImage("");
+    setCatIsActive(1);
+    setCatFrom("");
+    setCatUntil("");
+    setIsCatModalOpen(true);
+  };
+
+  const openEditCategoryModal = (cat: DbCategory) => {
+    setEditingCategory(cat);
+    setCatName(cat.name);
+    setCatImage(cat.image_url || "");
+    setCatIsActive(cat.is_active);
+    setCatFrom(cat.available_from || "");
+    setCatUntil(cat.available_until || "");
+    setIsCatModalOpen(true);
+  };
+
   // ─── T-023 & T-027: MENU ITEMS STATE & HANDLERS ───────────────────────────
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("ALL");
   const [availabilityFilter, setAvailabilityFilter] = useState<"ALL" | "IN_STOCK" | "SOLD_OUT">("ALL");
@@ -191,7 +252,7 @@ export default function MenuManagement() {
 
   const [itemName, setItemName] = useState("");
   const [itemCatId, setItemCatId] = useState("");
-  const [itemPrice, setItemPrice] = useState("8.99");
+  const [itemPrice, setItemPrice] = useState("450");
   const [itemTax, setItemTax] = useState("0.08");
   const [itemDesc, setItemDesc] = useState("");
   const [itemImage, setItemImage] = useState("");
@@ -217,7 +278,7 @@ export default function MenuManagement() {
     setEditingItem(null);
     setItemName("");
     setItemCatId(categories[0]?.id || "");
-    setItemPrice("8.99");
+    setItemPrice("450");
     setItemTax("0.08");
     setItemDesc("");
     setItemImage("");
@@ -295,7 +356,7 @@ export default function MenuManagement() {
   const [variants, setVariants] = useState<{ name: string; price: number }[]>([]);
   const [selectedModifierIds, setSelectedModifierIds] = useState<string[]>([]);
   const [newModName, setNewModName] = useState("");
-  const [newModPrice, setNewModPrice] = useState("1.50");
+  const [newModPrice, setNewModPrice] = useState("50");
 
   useEffect(() => {
     if (items.length > 0 && !selectedItemId) {
@@ -320,7 +381,7 @@ export default function MenuManagement() {
   }, [selectedItemId]);
 
   const handleAddVariantRow = () => {
-    setVariants([...variants, { name: "", price: 1.0 }]);
+    setVariants([...variants, { name: "", price: 150 }]);
   };
 
   const handleRemoveVariantRow = (index: number) => {
@@ -420,6 +481,7 @@ export default function MenuManagement() {
   };
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
 
   const inStockCount = items.filter((i) => i.is_available === 1).length;
   const soldOutCount = items.filter((i) => i.is_available === 0).length;
@@ -443,8 +505,49 @@ export default function MenuManagement() {
     return true;
   });
 
+  const groupedMenuItems = useMemo(() => {
+    const sortedCategories = [...categories].sort((a, b) => a.display_order - b.display_order);
+
+    if (selectedCategoryFilter !== "ALL") {
+      const category = categories.find((c) => c.id === selectedCategoryFilter) ?? null;
+      return filteredMenuItems.length > 0 ? [{ category, items: filteredMenuItems }] : [];
+    }
+
+    const groups: { category: DbCategory | null; items: DbMenuItem[] }[] = [];
+
+    for (const category of sortedCategories) {
+      const categoryItems = filteredMenuItems.filter((item) => item.category_id === category.id);
+      if (categoryItems.length > 0) {
+        groups.push({ category, items: categoryItems });
+      }
+    }
+
+    const uncategorized = filteredMenuItems.filter(
+      (item) => !categories.some((category) => category.id === item.category_id),
+    );
+    if (uncategorized.length > 0) {
+      groups.push({ category: null, items: uncategorized });
+    }
+
+    return groups;
+  }, [filteredMenuItems, categories, selectedCategoryFilter]);
+
+  const sortedCategories = useMemo(
+    () => [...categories].sort((a, b) => a.display_order - b.display_order),
+    [categories],
+  );
+
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchQuery.trim()) return sortedCategories;
+    const q = categorySearchQuery.toLowerCase().trim();
+    return sortedCategories.filter((category) => category.name.toLowerCase().includes(q));
+  }, [sortedCategories, categorySearchQuery]);
+
+  const getCategoryItemCount = (categoryId: string) =>
+    items.filter((item) => item.category_id === categoryId).length;
+
   return (
-    <div className="card full-width-card" style={{ padding: "20px" }}>
+    <div className="card menu-catalog-page">
       <div className="card-header-row" style={{ marginBottom: "16px" }}>
         <div>
           <h4>Menu & Catalog Manager</h4>
@@ -546,31 +649,25 @@ export default function MenuManagement() {
           {/* SUB-TAB 1: MENU ITEMS (T-023)                                       */}
           {/* ─────────────────────────────────────────────────────────────────── */}
           {activeTab === "items" && (
-            <div>
-              <div className="card-header-row" style={{ marginTop: "8px", marginBottom: "16px" }}>
-                <div className="filter-controls" style={{ flexWrap: "wrap" }}>
-                  <div style={{ position: "relative", minWidth: "180px" }}>
-                    <div style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}>
-                      <IconSearch size={14} />
-                    </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search items..."
-                      style={{
-                        paddingLeft: "32px",
-                        fontSize: "13px",
-                        width: "100%",
-                      }}
-                    />
-                  </div>
+            <div className="menu-catalog-items">
+              <div className="menu-toolbar">
+                <div className="menu-search-field">
+                  <IconSearch size={18} className="menu-search-icon" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search menu items..."
+                    aria-label="Search menu items"
+                  />
+                </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                      Category:
-                    </label>
+                <div className="menu-toolbar-filters">
+                  <div className="menu-filter-group">
+                    <label htmlFor="menu-category-filter">Category</label>
                     <select
+                      id="menu-category-filter"
+                      className="menu-filter-select"
                       value={selectedCategoryFilter}
                       onChange={(e) => setSelectedCategoryFilter(e.target.value)}
                     >
@@ -583,11 +680,11 @@ export default function MenuManagement() {
                     </select>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <label style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                      Stock Status:
-                    </label>
+                  <div className="menu-filter-group">
+                    <label htmlFor="menu-stock-filter">Stock Status</label>
                     <select
+                      id="menu-stock-filter"
+                      className="menu-filter-select"
                       value={availabilityFilter}
                       onChange={(e) => setAvailabilityFilter(e.target.value as "ALL" | "IN_STOCK" | "SOLD_OUT")}
                     >
@@ -598,92 +695,125 @@ export default function MenuManagement() {
                   </div>
                 </div>
 
-                <button type="button" className="btn-primary" onClick={openAddItemModal} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  type="button"
+                  className="btn-primary menu-toolbar-add"
+                  onClick={openAddItemModal}
+                >
                   <IconPlus size={16} /> Add Menu Item
                 </button>
               </div>
 
-              <div className="menu-items-grid">
-                {filteredMenuItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`menu-item-card ${item.is_available === 0 ? "item-disabled" : ""}`}
+              {filteredMenuItems.length === 0 ? (
+                <div className="menu-empty-state">
+                  <IconUtensils size={36} color="var(--text-muted)" />
+                  <h5>No menu items found</h5>
+                  <p>Try a different search or filter, or add your first item.</p>
+                  <button type="button" className="btn-primary" onClick={openAddItemModal}>
+                    <IconPlus size={16} /> Add Menu Item
+                  </button>
+                </div>
+              ) : (
+                groupedMenuItems.map(({ category, items: categoryItems }) => (
+                  <section
+                    key={category?.id ?? "uncategorized"}
+                    className="menu-category-section"
                   >
-                    <div className="item-card-header">
-                      <span className="item-category-tag">
-                        {item.category_name || "Uncategorized"}
-                      </span>
-                      {item.is_combo === 1 && <span className="combo-badge">🎁 Combo</span>}
-                      {item.available_from && item.available_until && (
-                        <span
-                          className="combo-badge"
-                          style={{
-                            backgroundColor: isItemInTimeWindow(item) ? "#059669" : "#d97706",
-                          }}
-                        >
-                          ⏰ {item.available_from} – {item.available_until}
-                          {!isItemInTimeWindow(item) && " (Closed)"}
-                        </span>
-                      )}
-                    </div>
-
-                    {item.image_url && (
-                      <div style={{ margin: "10px 0", borderRadius: "10px", overflow: "hidden", height: "120px" }}>
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
+                    <div className="menu-category-header">
+                      <div>
+                        <h5>{category?.name ?? "Uncategorized"}</h5>
+                        <p>{categoryItems.length} item{categoryItems.length === 1 ? "" : "s"}</p>
                       </div>
-                    )}
-
-                    <h5 className="item-title">{item.name}</h5>
-                    <p className="item-desc">{item.description || "No description available."}</p>
-
-                    <div className="item-pricing">
-                      <span className="base-price">${item.base_price.toFixed(2)}</span>
-                      <span className="tax-tag">+{(item.tax_rate * 100).toFixed(0)}% Tax</span>
                     </div>
 
-                    <div className="item-actions">
-                      <button
-                        type="button"
-                        className={`btn-sm ${item.is_available === 1 ? "btn-success" : "btn-warning"}`}
-                        onClick={() => handleToggleAvailable(item)}
-                      >
-                        {item.is_available === 1 ? "In Stock" : "Sold Out"}
-                      </button>
+                    <div className="menu-catalog-grid">
+                      {categoryItems.map((item) => (
+                        <article
+                          key={item.id}
+                          className={`menu-catalog-card ${item.is_available === 0 ? "item-disabled" : ""}`}
+                        >
+                          <div className="menu-catalog-image-wrap">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="menu-catalog-image"
+                              />
+                            ) : (
+                              <div className="menu-catalog-image-placeholder">
+                                <IconUtensils size={32} color="var(--bordo)" />
+                              </div>
+                            )}
 
-                      <button
-                        type="button"
-                        className="btn-secondary btn-sm"
-                        onClick={() => {
-                          setSelectedItemId(item.id);
-                          setActiveTab("variants_modifiers");
-                        }}
-                      >
-                        📏 Variants
-                      </button>
+                            <div className="menu-catalog-badges">
+                              {item.is_combo === 1 && <span className="menu-badge menu-badge-combo">Combo</span>}
+                              {item.available_from && item.available_until && (
+                                <span
+                                  className={`menu-badge ${
+                                    isItemInTimeWindow(item) ? "menu-badge-open" : "menu-badge-closed"
+                                  }`}
+                                >
+                                  {item.available_from} – {item.available_until}
+                                  {!isItemInTimeWindow(item) && " · Closed"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                      <button
-                        type="button"
-                        className="btn-secondary btn-sm"
-                        onClick={() => openEditItemModal(item)}
-                      >
-                        Edit
-                      </button>
+                          <div className="menu-catalog-body">
+                            <h6 className="menu-catalog-title">{item.name}</h6>
+                            <p className="menu-catalog-desc">
+                              {item.description || "No description available."}
+                            </p>
 
-                      <button
-                        type="button"
-                        className="btn-danger btn-sm"
-                        onClick={() => handleDeleteItem(item)}
-                      >
-                        Delete
-                      </button>
+                            <div className="menu-catalog-pricing">
+                              <span className="menu-catalog-price">{formatCurrency(item.base_price)}</span>
+                              <span className="menu-catalog-tax">+{(item.tax_rate * 100).toFixed(0)}% tax</span>
+                            </div>
+                          </div>
+
+                          <div className="menu-catalog-actions">
+                            <button
+                              type="button"
+                              className={`btn-sm ${item.is_available === 1 ? "btn-success" : "btn-warning"}`}
+                              onClick={() => handleToggleAvailable(item)}
+                            >
+                              {item.is_available === 1 ? "In Stock" : "Sold Out"}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              onClick={() => {
+                                setSelectedItemId(item.id);
+                                setActiveTab("variants_modifiers");
+                              }}
+                            >
+                              <IconEdit size={14} /> Variants
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              onClick={() => openEditItemModal(item)}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-danger btn-sm"
+                              onClick={() => handleDeleteItem(item)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </article>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  </section>
+                ))
+              )}
             </div>
           )}
 
@@ -691,127 +821,151 @@ export default function MenuManagement() {
           {/* SUB-TAB 2: CATEGORIES (T-022)                                       */}
           {/* ─────────────────────────────────────────────────────────────────── */}
           {activeTab === "categories" && (
-            <div>
-              <div className="card-header-row" style={{ marginTop: "16px" }}>
-                <h5>Menu Categories ({categories.length})</h5>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => {
-                    setEditingCategory(null);
-                    setCatName("");
-                    setCatIsActive(1);
-                    setCatFrom("");
-                    setCatUntil("");
-                    setIsCatModalOpen(true);
-                  }}
-                >
-                  + Add Category
+            <div className="menu-catalog-categories">
+              <div className="menu-toolbar">
+                <div className="menu-search-field">
+                  <IconSearch size={18} className="menu-search-icon" />
+                  <input
+                    type="text"
+                    value={categorySearchQuery}
+                    onChange={(e) => setCategorySearchQuery(e.target.value)}
+                    placeholder="Search categories..."
+                    aria-label="Search categories"
+                  />
+                </div>
+
+                <button type="button" className="btn-primary menu-toolbar-add" onClick={openAddCategoryModal}>
+                  <IconPlus size={16} /> Add Category
                 </button>
               </div>
 
-              <div className="table-responsive">
-                <table className="staff-table">
-                  <thead>
-                    <tr>
-                      <th>Display Order</th>
-                      <th>Category Name</th>
-                      <th>Time Window (FR-2.7)</th>
-                      <th>Status</th>
-                      <th>Reorder</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.map((cat, idx) => (
-                      <tr key={cat.id}>
-                        <td>
-                          <code>#{cat.display_order}</code>
-                        </td>
-                        <td>
-                          <strong>{cat.name}</strong>
-                        </td>
-                        <td>
-                          {cat.available_from && cat.available_until ? (
-                            <span
-                              className="combo-badge"
-                              style={{
-                                backgroundColor: isCategoryInTimeWindow(cat) ? "#059669" : "#d97706",
-                              }}
-                            >
-                              ⏰ {cat.available_from} – {cat.available_until}
-                              {!isCategoryInTimeWindow(cat) && " (Closed)"}
-                            </span>
-                          ) : (
-                            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                              All Day (24/7)
-                            </span>
-                          )}
-                        </td>
-                        <td>
+              {filteredCategories.length === 0 ? (
+                <div className="menu-empty-state">
+                  <IconMenu size={36} color="var(--text-muted)" />
+                  <h5>No categories found</h5>
+                  <p>
+                    {categories.length === 0
+                      ? "Create your first menu category to organize items."
+                      : "Try a different search term."}
+                  </p>
+                  {categories.length === 0 && (
+                    <button type="button" className="btn-primary" onClick={openAddCategoryModal}>
+                      <IconPlus size={16} /> Add Category
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="menu-category-list">
+                  {filteredCategories.map((cat) => {
+                    const catIndex = sortedCategories.findIndex((c) => c.id === cat.id);
+                    const itemCount = getCategoryItemCount(cat.id);
+                    const coverImage =
+                      cat.image_url || items.find((item) => item.category_id === cat.id)?.image_url;
+
+                    return (
+                      <article
+                        key={cat.id}
+                        className={`menu-category-card ${cat.is_active === 0 ? "is-disabled" : ""}`}
+                      >
+                        <div className="menu-category-card-header">
+                          <span className="menu-category-order">#{cat.display_order}</span>
                           <span
                             className={`status-badge ${cat.is_active === 1 ? "active" : "inactive"}`}
                           >
                             {cat.is_active === 1 ? "Active" : "Disabled"}
                           </span>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
+                        </div>
+
+                        <div className="menu-category-card-body">
+                          <div className="menu-category-image" aria-hidden="true">
+                            <div className="menu-category-image-fallback">
+                              <IconMenu size={28} color="var(--bordo)" />
+                            </div>
+                            {coverImage && (
+                              <img
+                                src={coverImage}
+                                alt=""
+                                onError={(event) => {
+                                  event.currentTarget.style.display = "none";
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <h6 className="menu-category-name">{cat.name}</h6>
+                            <p className="menu-category-meta">
+                              {itemCount} item{itemCount === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="menu-category-schedule">
+                          <IconClock size={14} color="var(--text-muted)" />
+                          {cat.available_from && cat.available_until ? (
+                            <span
+                              className={`menu-badge ${
+                                isCategoryInTimeWindow(cat) ? "menu-badge-open" : "menu-badge-closed"
+                              }`}
+                            >
+                              {cat.available_from} – {cat.available_until}
+                              {!isCategoryInTimeWindow(cat) && " · Closed"}
+                            </span>
+                          ) : (
+                            <span className="menu-category-schedule-text">Available all day</span>
+                          )}
+                        </div>
+
+                        <div className="menu-category-card-actions">
+                          <div className="menu-category-reorder">
                             <button
                               type="button"
                               className="btn-secondary btn-sm"
-                              disabled={idx === 0}
+                              disabled={catIndex === 0}
                               onClick={() => handleReorderCategory(cat.id, "up")}
+                              title="Move up"
                             >
-                              ▲ Up
+                              ▲
                             </button>
                             <button
                               type="button"
                               className="btn-secondary btn-sm"
-                              disabled={idx === categories.length - 1}
+                              disabled={catIndex === sortedCategories.length - 1}
                               onClick={() => handleReorderCategory(cat.id, "down")}
+                              title="Move down"
                             >
-                              ▼ Down
+                              ▼
                             </button>
                           </div>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              type="button"
-                              className={`btn-sm ${cat.is_active === 1 ? "btn-warning" : "btn-success"}`}
-                              onClick={() => handleToggleCategoryStatus(cat)}
-                            >
-                              {cat.is_active === 1 ? "Disable" : "Activate"}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary btn-sm"
-                              onClick={() => {
-                                setEditingCategory(cat);
-                                setCatName(cat.name);
-                                setCatIsActive(cat.is_active);
-                                setCatFrom(cat.available_from || "");
-                                setCatUntil(cat.available_until || "");
-                                setIsCatModalOpen(true);
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-danger btn-sm"
-                              onClick={() => handleDeleteCategory(cat.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+
+                          <button
+                            type="button"
+                            className={`btn-sm ${cat.is_active === 1 ? "btn-warning" : "btn-success"}`}
+                            onClick={() => handleToggleCategoryStatus(cat)}
+                          >
+                            {cat.is_active === 1 ? "Disable" : "Activate"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-secondary btn-sm"
+                            onClick={() => openEditCategoryModal(cat)}
+                          >
+                            <IconEdit size={14} /> Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-danger btn-sm"
+                            onClick={() => handleDeleteCategory(cat.id)}
+                          >
+                            <IconTrash size={14} /> Delete
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -819,155 +973,138 @@ export default function MenuManagement() {
           {/* SUB-TAB 3: VARIANTS & MODIFIERS (T-024 & T-025)                     */}
           {/* ─────────────────────────────────────────────────────────────────── */}
           {activeTab === "variants_modifiers" && (
-            <div className="variants-modifiers-section">
-              <div className="form-group" style={{ maxWidth: "400px", marginTop: "16px" }}>
-                <label>Select Target Menu Item:</label>
-                <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)}>
-                  {items.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name} (${i.base_price.toFixed(2)})
-                    </option>
-                  ))}
-                </select>
+            <section className="variants-workspace">
+              <div className="variants-item-picker">
+                <div>
+                  <span className="variants-eyebrow">Configure options for</span>
+                  <h5>Choose a menu item</h5>
+                  <p>Set sizes, prices, and available add-ons in one place.</p>
+                </div>
+                <div className="variants-select-wrap">
+                  <label htmlFor="variant-menu-item">Menu item</label>
+                  <select id="variant-menu-item" value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)}>
+                    {items.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name} · {formatCurrency(i.base_price)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="two-column-layout">
-                {/* Variants Column (T-024) */}
-                <div className="sub-card">
-                  <h5>📏 Item Variants (Sizes / Options - T-024)</h5>
-                  <p className="subtitle">e.g. Small ($1.99), Medium ($2.99), Large ($3.99)</p>
-
-                  <div className="variant-list">
-                    {variants.map((v, idx) => (
-                      <div key={idx} className="variant-row">
-                        <input
-                          type="text"
-                          placeholder="Variant Name (e.g. Small)"
-                          value={v.name}
-                          onChange={(e) => {
-                            const updated = [...variants];
-                            updated[idx].name = e.target.value;
-                            setVariants(updated);
-                          }}
-                        />
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="Price"
-                          value={v.price}
-                          onChange={(e) => {
-                            const updated = [...variants];
-                            updated[idx].price = parseFloat(e.target.value) || 0;
-                            setVariants(updated);
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="btn-danger btn-sm"
-                          onClick={() => handleRemoveVariantRow(idx)}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+              <div className="variants-editor-grid">
+                <article className="variants-editor-card">
+                  <div className="variants-card-heading">
+                    <div className="variants-heading-icon"><IconEdit size={20} color="var(--bordo)" /></div>
+                    <div>
+                      <h5>Sizes & variants</h5>
+                      <p>Add choices such as Small, Regular, or Large.</p>
+                    </div>
+                    <span className="variants-count">{variants.length}</span>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn-secondary btn-sm"
-                    style={{ marginTop: "12px" }}
-                    onClick={handleAddVariantRow}
-                  >
-                    + Add Variant Option
+                  {variants.length === 0 ? (
+                    <div className="variants-empty">No options added yet. Add a size or other variant below.</div>
+                  ) : (
+                    <div className="variants-list">
+                      {variants.map((v, idx) => (
+                        <div key={idx} className="variants-row">
+                          <span className="variants-row-number">{idx + 1}</span>
+                          <input
+                            type="text"
+                            aria-label={`Variant ${idx + 1} name`}
+                            placeholder="e.g. Large"
+                            value={v.name}
+                            onChange={(e) => {
+                              const updated = [...variants];
+                              updated[idx].name = e.target.value;
+                              setVariants(updated);
+                            }}
+                          />
+                          <div className="variants-price-input">
+                            <span>Rs.</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              aria-label={`Variant ${idx + 1} price`}
+                              value={v.price}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[idx].price = parseFloat(e.target.value) || 0;
+                                setVariants(updated);
+                              }}
+                            />
+                          </div>
+                          <button type="button" className="variants-remove-button" onClick={() => handleRemoveVariantRow(idx)} aria-label={`Remove ${v.name || "variant"}`}>
+                            <IconTrash size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button type="button" className="variants-add-button" onClick={handleAddVariantRow}>
+                    <IconPlus size={17} /> Add variant
                   </button>
-                </div>
+                </article>
 
-                {/* Modifiers Column (T-025) */}
-                <div className="sub-card">
-                  <h5>🧂 Attach Modifiers & Add-ons (T-025)</h5>
-                  <p className="subtitle">Check modifiers available for this item</p>
+                <article className="variants-editor-card">
+                  <div className="variants-card-heading">
+                    <div className="variants-heading-icon"><IconMenu size={20} color="var(--bordo)" /></div>
+                    <div>
+                      <h5>Add-ons & modifiers</h5>
+                      <p>Select the extras a customer can choose.</p>
+                    </div>
+                    <span className="variants-count">{selectedModifierIds.length} selected</span>
+                  </div>
 
-                  <div className="modifier-checklist">
+                  <div className="modifier-option-list">
                     {modifiers.map((m) => {
                       const isChecked = selectedModifierIds.includes(m.id);
                       return (
-                        <div
-                          key={m.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: "8px",
-                            padding: "4px 0",
-                          }}
-                        >
-                          <label className="modifier-checkbox-label" style={{ margin: 0 }}>
+                        <div key={m.id} className={`modifier-option ${isChecked ? "is-selected" : ""}`}>
+                          <label>
                             <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedModifierIds([...selectedModifierIds, m.id]);
-                                } else {
-                                  setSelectedModifierIds(
-                                    selectedModifierIds.filter((id) => id !== m.id),
-                                  );
-                                }
+                                setSelectedModifierIds(
+                                  e.target.checked
+                                    ? [...selectedModifierIds, m.id]
+                                    : selectedModifierIds.filter((id) => id !== m.id),
+                                );
                               }}
                             />
-                            <span>
-                              {m.name}{" "}
-                              <strong style={{ color: "#c2693a" }}>
-                                (+${m.price_adjustment.toFixed(2)})
-                              </strong>
-                            </span>
+                            <span className="modifier-option-check"><IconCheck size={14} color="#FFFFFF" /></span>
+                            <span className="modifier-option-name">{m.name}</span>
+                            <span className="modifier-option-price">+{formatCurrency(m.price_adjustment)}</span>
                           </label>
-                          <button
-                            type="button"
-                            className="btn-danger btn-sm"
-                            style={{ padding: "2px 6px", fontSize: "11px" }}
-                            onClick={() => handleDeleteModifier(m.id, m.name)}
-                          >
-                            ✕
+                          <button type="button" className="variants-remove-button" onClick={() => handleDeleteModifier(m.id, m.name)} aria-label={`Delete ${m.name}`}>
+                            <IconTrash size={15} />
                           </button>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Create New Modifier inline */}
-                  <form onSubmit={handleCreateNewModifier} className="inline-modifier-form">
-                    <input
-                      type="text"
-                      placeholder="New modifier (e.g. Extra Jalapenos)"
-                      value={newModName}
-                      onChange={(e) => setNewModName(e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="+$"
-                      value={newModPrice}
-                      style={{ width: "80px" }}
-                      onChange={(e) => setNewModPrice(e.target.value)}
-                    />
-                    <button type="submit" className="btn-secondary btn-sm">
-                      + Create Modifier
-                    </button>
+                  <form onSubmit={handleCreateNewModifier} className="modifier-create-form">
+                    <input type="text" placeholder="New add-on name" value={newModName} onChange={(e) => setNewModName(e.target.value)} />
+                    <div className="variants-price-input">
+                      <span>Rs.</span>
+                      <input type="number" step="0.01" aria-label="New modifier price" value={newModPrice} onChange={(e) => setNewModPrice(e.target.value)} />
+                    </div>
+                    <button type="submit" className="btn-secondary btn-sm"><IconPlus size={15} /> Create</button>
                   </form>
-                </div>
+                </article>
               </div>
 
-              <div style={{ marginTop: "24px" }}>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={handleSaveVariantsAndModifiers}
-                >
-                  💾 Save Variants & Modifiers for Selected Item
+              <div className="variants-save-bar">
+                <div><strong>Ready to save?</strong><span>Changes apply to the selected menu item only.</span></div>
+                <button type="button" className="btn-primary" onClick={handleSaveVariantsAndModifiers}>
+                  <IconCheck size={18} /> Save changes
                 </button>
               </div>
-            </div>
+            </section>
           )}
 
           {/* ─────────────────────────────────────────────────────────────────── */}
@@ -983,7 +1120,7 @@ export default function MenuManagement() {
                 >
                   {comboEligibleParents.map((i) => (
                     <option key={i.id} value={i.id}>
-                      🎁 {i.name} (Bundled Base Price: ${i.base_price.toFixed(2)})
+                      🎁 {i.name} (Bundled Base Price: {formatCurrency(i.base_price)})
                     </option>
                   ))}
                 </select>
@@ -1010,7 +1147,7 @@ export default function MenuManagement() {
                           .filter((i) => i.id !== selectedComboParentId)
                           .map((i) => (
                             <option key={i.id} value={i.id}>
-                              {i.name} (${i.base_price.toFixed(2)})
+                              {i.name} ({formatCurrency(i.base_price)})
                             </option>
                           ))}
                       </select>
@@ -1085,13 +1222,12 @@ export default function MenuManagement() {
                           color: "var(--text-muted)",
                         }}
                       >
-                        $
-                        {comboComponents
-                          .reduce((sum, comp) => {
+                        {formatCurrency(
+                          comboComponents.reduce((sum, comp) => {
                             const child = items.find((i) => i.id === comp.child_item_id);
                             return sum + (child ? child.base_price * comp.quantity : 0);
-                          }, 0)
-                          .toFixed(2)}
+                          }, 0),
+                        )}
                       </div>
                     </div>
 
@@ -1100,10 +1236,7 @@ export default function MenuManagement() {
                         Bundled Combo Package Price
                       </div>
                       <div style={{ fontSize: "22px", fontWeight: "800", color: "var(--accent)" }}>
-                        $
-                        {(
-                          items.find((i) => i.id === selectedComboParentId)?.base_price || 0
-                        ).toFixed(2)}
+                        {formatCurrency(items.find((i) => i.id === selectedComboParentId)?.base_price || 0)}
                       </div>
                     </div>
 
@@ -1131,7 +1264,7 @@ export default function MenuManagement() {
                             fontSize: "13px",
                           }}
                         >
-                          🎉 Customer Saves ${savings.toFixed(2)} ({savingsPct.toFixed(0)}% OFF)
+                          🎉 Customer Saves {formatCurrency(savings)} ({savingsPct.toFixed(0)}% OFF)
                         </div>
                       );
                     })()}
@@ -1164,6 +1297,39 @@ export default function MenuManagement() {
                   placeholder="e.g. Appetizers"
                   required
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Category Image Link (optional)</label>
+                <input
+                  type="url"
+                  value={catImage}
+                  onChange={(e) => setCatImage(e.target.value)}
+                  placeholder="https://example.com/drinks.jpg"
+                />
+                <small className="form-hint">
+                  Paste an image link, or upload an image from this computer below.
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Upload Category Image (optional)</label>
+                <div className="category-image-upload-row">
+                  <label className="btn-secondary category-image-upload-button">
+                    <IconPlus size={16} /> Choose Image
+                    <input type="file" accept="image/*" onChange={handleCategoryImageUpload} />
+                  </label>
+                  <span className="form-hint">PNG, JPG, or WebP · up to 2 MB</span>
+                </div>
+
+                {catImage && (
+                  <div className="category-image-preview">
+                    <img src={catImage} alt="Selected category preview" />
+                    <button type="button" className="btn-secondary btn-sm" onClick={() => setCatImage("")}>
+                      Remove image
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -1244,7 +1410,7 @@ export default function MenuManagement() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div className="form-group">
-                  <label>Base Price ($)</label>
+                  <label>Base Price (Rs.)</label>
                   <input
                     type="number"
                     step="0.01"
