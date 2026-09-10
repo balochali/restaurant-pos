@@ -177,7 +177,7 @@ export async function getOrderItems(orderId: string): Promise<DbOrderItem[]> {
      LEFT JOIN menu_items  mi ON mi.id = oi.menu_item_id
      LEFT JOIN item_variants iv ON iv.id = oi.variant_id
      WHERE oi.order_id = ? AND oi.status != 'VOIDED'
-     ORDER BY rowid ASC`,
+     ORDER BY oi.rowid ASC`,
     [orderId]
   );
 }
@@ -282,23 +282,23 @@ export async function sendToKitchen(orderId: string, userId: string): Promise<vo
 // ─── T-033: Order Status State Machine ───────────────────────────────────────
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  OPEN:            "Open",
+  OPEN: "Open",
   SENT_TO_KITCHEN: "Sent to Kitchen",
-  IN_PREP:         "In Preparation",
-  READY:           "Ready to Serve",
-  SERVED:          "Served",
-  CLOSED:          "Closed",
-  VOIDED:          "Voided",
+  IN_PREP: "In Preparation",
+  READY: "Ready to Serve",
+  SERVED: "Served",
+  CLOSED: "Closed",
+  VOIDED: "Voided",
 };
 
 export const ORDER_STATUS_FLOW: Record<OrderStatus, OrderStatus | null> = {
-  OPEN:            "SENT_TO_KITCHEN",
+  OPEN: "SENT_TO_KITCHEN",
   SENT_TO_KITCHEN: "IN_PREP",
-  IN_PREP:         "READY",
-  READY:           "SERVED",
-  SERVED:          "CLOSED",
-  CLOSED:          null,
-  VOIDED:          null,
+  IN_PREP: "READY",
+  READY: "SERVED",
+  SERVED: "CLOSED",
+  CLOSED: null,
+  VOIDED: null,
 };
 
 export function getNextStatus(current: OrderStatus): OrderStatus | null {
