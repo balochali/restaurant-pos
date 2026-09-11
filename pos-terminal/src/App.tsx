@@ -17,13 +17,14 @@ import {
   IconUsers,
   IconInventory,
   IconAudit,
+  IconChart,
   IconCrown,
   IconSwitchUser,
   IconLogout,
 } from "./components/Icons";
 import "./App.css";
 
-type Tab = "cashier_pos" | "tables" | "menu" | "users" | "inventory" | "audit";
+type Tab = "cashier_pos" | "tables" | "menu" | "users" | "inventory" | "reports" | "audit";
 
 interface SidebarNavItemProps {
   tab: Tab;
