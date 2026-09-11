@@ -183,7 +183,7 @@ export default function UserManagement() {
       setSuccess(`Deleted staff account "${targetUser.name}".`);
       refreshUsersList();
     } catch (err) {
-      setError("Failed to delete user: " + String(err));
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
