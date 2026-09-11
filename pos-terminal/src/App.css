@@ -58,10 +58,29 @@
   --border-light: #EBE4D8;
   --border-medium: #DACFC0;
   --border-color: #E2D9CC;
+
+  /* Short-hand aliases used across components — kept in sync with the
+     brand tokens above so a single source of truth drives both names. */
+  --primary: var(--bordo);
+  --secondary: var(--green);
+  --surface-warm: var(--cream-light);
+}
+
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 /* ─── Global Reset & Typography ────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -84,18 +103,39 @@ body {
 
 /* ─── Keyframe Animations ─────────────────────────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 21, 30, 0.4); }
-  50%      { box-shadow: 0 0 0 8px rgba(108, 21, 30, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(108, 21, 30, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(108, 21, 30, 0);
+  }
 }
 
 /* ─── PIN Login Screen ─────────────────────────────────────────────────────── */
@@ -521,6 +561,12 @@ body {
   background: var(--green-light);
   color: var(--green);
   border: 1px solid var(--green-border);
+}
+
+.role-KITCHEN_STAFF {
+  background: #EEF2F6;
+  color: #3B5166;
+  border: 1px solid #D7E1EA;
 }
 
 /* ─── Mode Switcher Bar (Admin vs Cashier) ─────────────────────────────────── */
@@ -1463,11 +1509,35 @@ body {
   white-space: nowrap;
 }
 
-.active-order-status.status-open { background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8; }
-.active-order-status.status-sent-to-kitchen { background: #FFF8E1; border-color: #FDE68A; color: #B45309; }
-.active-order-status.status-in-prep { background: #FEF3C7; border-color: #FCD34D; color: #B45309; }
-.active-order-status.status-ready { background: #ECFDF5; border-color: #A7F3D0; color: #047857; }
-.active-order-status.status-served { background: #F3F0FF; border-color: #DDD6FE; color: #6D28D9; }
+.active-order-status.status-open {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1D4ED8;
+}
+
+.active-order-status.status-sent-to-kitchen {
+  background: #FFF8E1;
+  border-color: #FDE68A;
+  color: #B45309;
+}
+
+.active-order-status.status-in-prep {
+  background: #FEF3C7;
+  border-color: #FCD34D;
+  color: #B45309;
+}
+
+.active-order-status.status-ready {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #047857;
+}
+
+.active-order-status.status-served {
+  background: #F3F0FF;
+  border-color: #DDD6FE;
+  color: #6D28D9;
+}
 
 .active-order-actions {
   display: flex;
@@ -1502,7 +1572,9 @@ body {
   cursor: pointer;
 }
 
-.active-order-void:hover { background: #FDE7E9; }
+.active-order-void:hover {
+  background: #FDE7E9;
+}
 
 .active-orders-empty {
   display: grid;
@@ -1516,26 +1588,81 @@ body {
   text-align: center;
 }
 
-.active-orders-empty h5 { margin: 4px 0 0; color: var(--text-primary); font-size: 16px; }
-.active-orders-empty p { margin: 0 0 8px; color: var(--text-secondary); font-size: 13px; }
+.active-orders-empty h5 {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.active-orders-empty p {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
 
 @media (max-width: 900px) {
-  .active-orders-toolbar { align-items: stretch; flex-direction: column; }
-  .active-order-summary { grid-template-columns: 120px minmax(0, 1fr) auto; }
-  .active-order-status { grid-column: 1 / -1; justify-self: start; }
+  .active-orders-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .active-order-summary {
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+  }
+
+  .active-order-status {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
 }
 
 @media (max-width: 560px) {
-  .active-orders-controls { align-items: stretch; flex-direction: column; }
-  .active-orders-controls label { width: 100%; }
-  .active-orders-controls .btn-secondary { width: 100%; }
-  .active-order-summary { grid-template-columns: 1fr auto; gap: 12px; }
-  .active-order-customer { grid-column: 1 / -1; grid-row: 2; }
-  .active-order-total { grid-column: 2; grid-row: 1; }
-  .active-order-id { grid-column: 1; grid-row: 1; }
-  .active-order-status { grid-column: 1 / -1; grid-row: 3; }
-  .active-order-actions .btn-sm { flex: 1 1 calc(50% - 4px); justify-content: center; }
-  .active-order-void { margin-left: 0; }
+  .active-orders-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .active-orders-controls label {
+    width: 100%;
+  }
+
+  .active-orders-controls .btn-secondary {
+    width: 100%;
+  }
+
+  .active-order-summary {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+
+  .active-order-customer {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .active-order-total {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .active-order-id {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .active-order-status {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .active-order-actions .btn-sm {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+  }
+
+  .active-order-void {
+    margin-left: 0;
+  }
 }
 
 /* ─── Variants & Add-ons Workspace ───────────────────────────────────────── */
@@ -1673,8 +1800,8 @@ body {
   text-align: center;
 }
 
-.variants-row > input,
-.modifier-create-form > input {
+.variants-row>input,
+.modifier-create-form>input {
   min-width: 0;
   height: 42px;
   padding: 0 11px;
@@ -1685,8 +1812,8 @@ body {
   font: inherit;
 }
 
-.variants-row > input:focus,
-.modifier-create-form > input:focus,
+.variants-row>input:focus,
+.modifier-create-form>input:focus,
 .variants-price-input:focus-within {
   outline: none;
   border-color: var(--bordo);
@@ -1884,6 +2011,7 @@ body {
 }
 
 @media (max-width: 900px) {
+
   .variants-item-picker,
   .variants-save-bar {
     align-items: stretch;
@@ -2098,6 +2226,142 @@ body {
 .staff-table tr:hover,
 .data-table tr:hover {
   background: var(--cream-bg);
+}
+
+/* ─── Staff Card Grid ──────────────────────────────────────────────────────── */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.staff-card {
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.staff-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--bordo-border);
+}
+
+.staff-card.row-inactive {
+  opacity: 0.6;
+}
+
+.staff-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.staff-avatar-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.staff-card-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.staff-card-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staff-card-username {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.staff-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+
+.staff-card-actions .btn-secondary,
+.staff-card-actions .btn-warning,
+.staff-card-actions .btn-success {
+  flex: 1;
+  justify-content: center;
+}
+
+.staff-card-actions .btn-danger {
+  flex-shrink: 0;
+}
+
+.staff-search-field {
+  position: relative;
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.staff-search-field .staff-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.staff-search-field input {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  border-radius: 14px;
+  border: 1.5px solid var(--card-border);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.18s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.staff-search-field input:focus {
+  border-color: var(--bordo);
+  box-shadow: 0 0 0 3px rgba(108, 21, 30, 0.1);
+}
+
+.staff-search-field input::placeholder {
+  color: var(--text-muted);
 }
 
 /* ─── Modals & Dialogs ─────────────────────────────────────────────────────── */
@@ -2393,6 +2657,7 @@ body {
 
 /* ─── Responsive: Tablet (641px – 1024px) ────────────────────────────────── */
 @media (min-width: 641px) and (max-width: 1024px) {
+
   /* Icon-only sidebar */
   .app-sidebar {
     width: 72px;
@@ -2476,6 +2741,10 @@ body {
   /* Stats */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .staff-grid {
+    grid-template-columns: 1fr;
   }
 
   /* Menu catalog */
@@ -2564,13 +2833,15 @@ body {
     padding: 8px 10px;
     min-width: 38px;
     gap: 0;
-    font-size: 0; /* hide text, keep icon */
+    font-size: 0;
+    /* hide text, keep icon */
   }
 
   /* Content */
   .app-content {
     padding: 12px 16px;
-    padding-bottom: 88px; /* clear bottom nav */
+    padding-bottom: 88px;
+    /* clear bottom nav */
   }
 
   /* ── Bottom Navigation Bar ── */
@@ -2675,7 +2946,7 @@ body {
   }
 
   /* Hide cart panel on mobile — it slides up via sheet */
-  .pos-order-layout > .pos-cart-panel {
+  .pos-order-layout>.pos-cart-panel {
     display: none;
   }
 
@@ -2830,8 +3101,8 @@ body {
   }
 
   /* Keep icon visible, hide text node — use font-size trick */
-  .header-actions .btn-secondary > *:not(svg):not([class*="Icon"]),
-  .header-actions .btn-danger > *:not(svg):not([class*="Icon"]) {
+  .header-actions .btn-secondary>*:not(svg):not([class*="Icon"]),
+  .header-actions .btn-danger>*:not(svg):not([class*="Icon"]) {
     display: none;
   }
 
