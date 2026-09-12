@@ -308,6 +308,17 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
       return;
     }
 
+    if (orderSource === "DINE_IN" && selectedTableId) {
+      const chosenTable = tables.find((t) => t.id === selectedTableId);
+      if (chosenTable && chosenTable.status !== "FREE") {
+        setError(
+          `Table ${chosenTable.number} is no longer free (${chosenTable.status.replace("_", " ").toLowerCase()}) — it may have just been claimed. Please pick another table.`
+        );
+        setSelectedTableId("");
+        return;
+      }
+    }
+
     try {
       const newOrder = await createOrder(orderSource, currentUser.id, {
         tableId: orderSource === "DINE_IN" ? selectedTableId : undefined,
@@ -724,7 +735,16 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         return (
                           <div
                             key={tbl.id}
-                            onClick={() => setSelectedTableId(tbl.id)}
+                            onClick={() => {
+                              if (!isFree) {
+                                setError(
+                                  `Table ${tbl.number} isn't available right now (${tbl.status.replace("_", " ").toLowerCase()}). Choose a free table, or clear/reset it from the Tables page first.`
+                                );
+                                return;
+                              }
+                              setSelectedTableId(tbl.id);
+                            }}
+                            title={isFree ? undefined : `Table ${tbl.number} is ${tbl.status.replace("_", " ").toLowerCase()}`}
                             style={{
                               padding: "10px 8px",
                               textAlign: "center",
@@ -735,7 +755,8 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                                 : isFree
                                   ? "#edfaf4"
                                   : "#fff1f0",
-                              cursor: "pointer",
+                              cursor: isFree ? "pointer" : "not-allowed",
+                              opacity: isFree || isSelected ? 1 : 0.65,
                               transition: "all 0.15s ease",
                             }}
                           >
