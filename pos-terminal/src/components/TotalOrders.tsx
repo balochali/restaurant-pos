@@ -1,9 +1,23 @@
 import { useState, useEffect, useMemo } from "react";
+import {
+    BarChart,
+    Bar,
+    PieChart,
+    Pie,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+} from "recharts";
 import { getClosedOrders, DbOrder } from "../lib/orderService";
 import { formatCurrency } from "../lib/formatCurrency";
 import { IconChart, IconReceipt, IconCash, IconClock } from "./Icons";
 
 type Period = "today" | "7d" | "30d" | "all";
+type ChartTab = "trend" | "payment" | "source";
 
 const PERIOD_LABELS: Record<Period, string> = {
     today: "Today",
@@ -11,6 +25,11 @@ const PERIOD_LABELS: Record<Period, string> = {
     "30d": "Last 30 Days",
     all: "All Time",
 };
+
+// A vibrant, distinct palette for chart series — deliberately more colorful
+// than the muted brand tones used elsewhere, since charts are where a bit of
+// visual energy helps the data stand out and stay easy to tell apart.
+const CHART_COLORS = ["#6C151E", "#0F9D82", "#D97706", "#3B82F6", "#9333EA", "#DB2777", "#059669", "#EA580C"];
 
 // Local (device-time) start-of-day, so "Today" lines up with the till, not UTC.
 function startOfLocalDay(daysAgo: number): Date {
@@ -35,62 +54,25 @@ function shortDateLabel(dateKey: string): string {
     return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function formatCompact(n: number): string {
-    if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
-    return Math.round(n).toString();
-}
-
-interface DailyBreakdownRow {
-    dateKey: string;
-    count: number;
-    total: number;
-}
-
-// A small dependency-free bar chart — this page only ever needs one simple
-// chart, so pulling in a full charting library isn't worth the bundle size.
-function DailySalesChart({ data }: { data: DailyBreakdownRow[] }) {
-    if (data.length === 0) return null;
-
-    const chronological = [...data].reverse();
-    const maxTotal = Math.max(...chronological.map((d) => d.total), 1);
-    const barCount = chronological.length;
-    const slotWidth = 56;
-    const chartWidth = Math.max(barCount * slotWidth, 280);
-    const barAreaHeight = 130;
-    const chartHeight = barAreaHeight + 46;
-    const barWidth = Math.min(34, slotWidth * 0.55);
-
+function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload || !payload.length) return null;
     return (
         <div
             style={{
-                overflowX: "auto",
-                marginBottom: "18px",
+                background: "#FFFFFF",
                 border: "1px solid var(--border-light)",
-                borderRadius: "14px",
-                padding: "16px 10px 8px",
+                borderRadius: "10px",
+                padding: "8px 12px",
+                boxShadow: "var(--card-shadow-hover)",
+                fontSize: "12px",
             }}
         >
-            <svg width={chartWidth} height={chartHeight} viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ display: "block" }}>
-                {chronological.map((d, i) => {
-                    const barHeight = Math.max(4, (d.total / maxTotal) * barAreaHeight);
-                    const x = i * slotWidth + (slotWidth - barWidth) / 2;
-                    const y = barAreaHeight - barHeight + 22;
-                    return (
-                        <g key={d.dateKey}>
-                            <title>
-                                {localDateLabel(d.dateKey)}: {formatCurrency(d.total)} · {d.count} order{d.count === 1 ? "" : "s"}
-                            </title>
-                            <rect x={x} y={y} width={barWidth} height={barHeight} rx={5} fill="var(--secondary)" />
-                            <text x={x + barWidth / 2} y={y - 6} textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--text-secondary)">
-                                {formatCompact(d.total)}
-                            </text>
-                            <text x={x + barWidth / 2} y={barAreaHeight + 38} textAnchor="middle" fontSize="10" fill="var(--text-muted)">
-                                {shortDateLabel(d.dateKey)}
-                            </text>
-                        </g>
-                    );
-                })}
-            </svg>
+            {label && <div style={{ fontWeight: 700, marginBottom: "4px" }}>{label}</div>}
+            {payload.map((p: any, i: number) => (
+                <div key={i} style={{ color: p.color || p.payload?.fill, fontWeight: 600 }}>
+                    {p.name}: {typeof p.value === "number" && p.value > 100 ? formatCurrency(p.value) : p.value}
+                </div>
+            ))}
         </div>
     );
 }
@@ -101,6 +83,7 @@ export default function TotalOrders() {
     const [error, setError] = useState("");
     const [period, setPeriod] = useState<Period>("today");
     const [ordersPage, setOrdersPage] = useState(1);
+    const [chartTab, setChartTab] = useState<ChartTab>("trend");
     const ORDERS_PER_PAGE = 10;
 
     const refresh = () => {
@@ -154,6 +137,32 @@ export default function TotalOrders() {
         return Array.from(groups.entries())
             .sort((a, b) => (a[0] < b[0] ? 1 : -1)) // newest day first
             .map(([dateKey, data]) => ({ dateKey, ...data }));
+    }, [periodOrders]);
+
+    // Chronological (oldest → newest) version for charts, with a short label.
+    const trendChartData = useMemo(
+        () =>
+            [...dailyBreakdown]
+                .reverse()
+                .map((row) => ({ label: shortDateLabel(row.dateKey), sales: row.total, orders: row.count })),
+        [dailyBreakdown]
+    );
+
+    const paymentChartData = useMemo(
+        () => Object.entries(stats.byMethod).map(([method, total]) => ({ name: method, value: total })),
+        [stats.byMethod]
+    );
+
+    const sourceChartData = useMemo(() => {
+        const byName: Record<string, { count: number; total: number }> = {};
+        for (const o of periodOrders) {
+            const key = o.order_source.replace("_", " ");
+            const entry = byName[key] || { count: 0, total: 0 };
+            entry.count += 1;
+            entry.total += o.total;
+            byName[key] = entry;
+        }
+        return Object.entries(byName).map(([name, d]) => ({ name, value: d.total, orders: d.count }));
     }, [periodOrders]);
 
     const totalOrderPages = Math.max(1, Math.ceil(periodOrders.length / ORDERS_PER_PAGE));
@@ -236,15 +245,87 @@ export default function TotalOrders() {
                         </div>
                     </div>
 
-                    {Object.keys(stats.byMethod).length > 0 && (
-                        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "22px" }}>
-                            {Object.entries(stats.byMethod).map(([method, total]) => (
-                                <span key={method} className="audit-badge badge-info" style={{ fontSize: "12px" }}>
-                                    {method}: {formatCurrency(total)}
-                                </span>
-                            ))}
+                    {/* Analytics — tabbed, colorful charts */}
+                    <div style={{ marginBottom: "24px" }}>
+                        <div style={{ display: "flex", gap: "6px", marginBottom: "14px", flexWrap: "wrap" }}>
+                            <button type="button" className={`sub-nav-tab ${chartTab === "trend" ? "active" : ""}`} onClick={() => setChartTab("trend")}>
+                                📈 Sales Trend
+                            </button>
+                            <button type="button" className={`sub-nav-tab ${chartTab === "payment" ? "active" : ""}`} onClick={() => setChartTab("payment")}>
+                                💳 Payment Methods
+                            </button>
+                            <button type="button" className={`sub-nav-tab ${chartTab === "source" ? "active" : ""}`} onClick={() => setChartTab("source")}>
+                                🍽️ Order Source
+                            </button>
                         </div>
-                    )}
+
+                        <div style={{ border: "1px solid var(--border-light)", borderRadius: "14px", padding: "16px", background: "#FFFFFF" }}>
+                            {chartTab === "trend" &&
+                                (trendChartData.length === 0 ? (
+                                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                                        <p>No completed orders in this period yet.</p>
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <BarChart data={trendChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
+                                            <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border-light)" }} tickLine={false} />
+                                            <YAxis
+                                                tick={{ fontSize: 11, fill: "var(--text-muted)" }}
+                                                axisLine={false}
+                                                tickLine={false}
+                                                width={50}
+                                                tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v)}
+                                            />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Bar dataKey="sales" name="Sales" radius={[6, 6, 0, 0]}>
+                                                {trendChartData.map((_, i) => (
+                                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ))}
+
+                            {chartTab === "payment" &&
+                                (paymentChartData.length === 0 ? (
+                                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                                        <p>No completed orders in this period yet.</p>
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie data={paymentChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3}>
+                                                {paymentChartData.map((_, i) => (
+                                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Legend verticalAlign="bottom" height={36} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ))}
+
+                            {chartTab === "source" &&
+                                (sourceChartData.length === 0 ? (
+                                    <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                                        <p>No completed orders in this period yet.</p>
+                                    </div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie data={sourceChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3}>
+                                                {sourceChartData.map((_, i) => (
+                                                    <Cell key={i} fill={CHART_COLORS[(i + 3) % CHART_COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Legend verticalAlign="bottom" height={36} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ))}
+                        </div>
+                    </div>
 
                     <h4 style={{ fontSize: "15px", marginBottom: "10px" }}>Daily Breakdown</h4>
                     {dailyBreakdown.length === 0 ? (
@@ -252,32 +333,30 @@ export default function TotalOrders() {
                             <p>No completed orders in this period yet.</p>
                         </div>
                     ) : (
-                        <>
-                            <DailySalesChart data={dailyBreakdown} />
-                            <div
-                                className="table-responsive"
-                                style={{ border: "1px solid var(--border-light)", borderRadius: "14px", overflow: "hidden", marginBottom: "26px" }}
-                            >
-                                <table className="staff-table" style={{ margin: 0 }}>
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Orders</th>
-                                            <th>Sales</th>
+                        <div
+                            className="table-responsive"
+                            style={{ border: "1px solid var(--border-light)", borderRadius: "14px", overflow: "hidden", marginBottom: "26px" }}
+                        >
+                            <table className="staff-table" style={{ margin: 0 }}>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Orders</th>
+                                        <th>Sales</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {dailyBreakdown.map((row) => (
+                                        <tr key={row.dateKey}>
+                                            <td>{localDateLabel(row.dateKey)}</td>
+                                            <td>{row.count}</td>
+                                            <td style={{ fontWeight: 700 }}>{formatCurrency(row.total)}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {dailyBreakdown.map((row) => (
-                                            <tr key={row.dateKey}>
-                                                <td>{localDateLabel(row.dateKey)}</td>
-                                                <td>{row.count}</td>
-                                                <td style={{ fontWeight: 700 }}>{formatCurrency(row.total)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
                     )}
 
                     <h4 style={{ fontSize: "15px", marginBottom: "10px" }}>
