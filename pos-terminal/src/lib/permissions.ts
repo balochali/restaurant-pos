@@ -8,7 +8,8 @@ export type PermissionAction =
   | "manage_menu"
   | "manage_inventory"
   | "process_payment"
-  | "create_order";
+  | "create_order"
+  | "view_kitchen_queue";
 
 export const PERMISSION_MATRIX: Record<Role, PermissionAction[]> = {
   ADMIN: [
@@ -20,6 +21,7 @@ export const PERMISSION_MATRIX: Record<Role, PermissionAction[]> = {
     "manage_inventory",
     "process_payment",
     "create_order",
+    "view_kitchen_queue",
   ],
   MANAGER: [
     "void_order",
@@ -29,10 +31,11 @@ export const PERMISSION_MATRIX: Record<Role, PermissionAction[]> = {
     "manage_inventory",
     "process_payment",
     "create_order",
+    "view_kitchen_queue",
   ],
   CASHIER: ["apply_discount", "process_payment", "create_order"],
   WAITER: ["create_order"],
-  KITCHEN_STAFF: [],
+  KITCHEN_STAFF: ["view_kitchen_queue", "manage_inventory"],
 };
 
 /**

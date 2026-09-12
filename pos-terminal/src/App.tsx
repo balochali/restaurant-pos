@@ -10,6 +10,7 @@ import MenuManagement from "./components/MenuManagement";
 import OrderManagement from "./components/OrderManagement";
 import TableManagement from "./components/TableManagement";
 import TotalOrders from "./components/TotalOrders";
+import { can } from "./lib/permissions";
 import {
   IconPosTerminal,
   IconTable,
@@ -18,6 +19,7 @@ import {
   IconInventory,
   IconAudit,
   IconChart,
+  IconChef,
   IconCrown,
   IconSwitchUser,
   IconLogout,
@@ -64,6 +66,9 @@ function SidebarNavItem({ tab, activeTab, onSelect, icon, label }: SidebarNavIte
 function TerminalContent() {
   const { user, login, logout, switchUser } = useAuth();
   const isAdminOrManager = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const canTakeOrders = can(user?.role, "create_order");
+  const canViewKitchenQueue = can(user?.role, "view_kitchen_queue");
+  const showOrdersTab = canTakeOrders || canViewKitchenQueue;
 
   const [activeTab, setActiveTab] = useState<Tab>("cashier_pos");
   const [selectedTableForOrder, setSelectedTableForOrder] = useState<string>("");
@@ -103,10 +108,16 @@ function TerminalContent() {
 
   // Tabs visible in the bottom nav (most important ones first)
   const bottomNavTabs = [
-    { tab: "cashier_pos" as Tab, icon: <IconPosTerminal size={18} color="currentColor" />, label: "Order" },
-    { tab: "tables" as Tab, icon: <IconTable size={18} color="currentColor" />, label: "Tables" },
+    ...(showOrdersTab ? [
+      { tab: "cashier_pos" as Tab, icon: <IconPosTerminal size={18} color="currentColor" />, label: canTakeOrders ? "Order" : "Kitchen" },
+    ] : []),
+    ...(canTakeOrders ? [
+      { tab: "tables" as Tab, icon: <IconTable size={18} color="currentColor" />, label: "Tables" },
+    ] : []),
     ...(isAdminOrManager ? [
       { tab: "menu" as Tab, icon: <IconMenu size={18} color="currentColor" />, label: "Menu" },
+    ] : []),
+    ...(can(user?.role, "manage_inventory") ? [
       { tab: "inventory" as Tab, icon: <IconInventory size={18} color="currentColor" />, label: "Stock" },
     ] : []),
   ];
@@ -136,28 +147,39 @@ function TerminalContent() {
             <div className="sidebar-section">
               <p className="sidebar-section-label">Daily</p>
 
-              <SidebarNavItem
-                tab="cashier_pos"
-                activeTab={activeTab}
-                onSelect={handleTabSelect}
-                label="Take Order"
-                icon={
-                  <IconPosTerminal
-                    size={22}
-                    color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"}
-                  />
-                }
-              />
+              {showOrdersTab && (
+                <SidebarNavItem
+                  tab="cashier_pos"
+                  activeTab={activeTab}
+                  onSelect={handleTabSelect}
+                  label={canTakeOrders ? "Take Order" : "Kitchen Orders"}
+                  icon={
+                    canTakeOrders ? (
+                      <IconPosTerminal
+                        size={22}
+                        color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"}
+                      />
+                    ) : (
+                      <IconChef
+                        size={22}
+                        color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"}
+                      />
+                    )
+                  }
+                />
+              )}
 
-              <SidebarNavItem
-                tab="tables"
-                activeTab={activeTab}
-                onSelect={handleTabSelect}
-                label="Tables"
-                icon={
-                  <IconTable size={22} color={activeTab === "tables" ? "#FFFFFF" : "currentColor"} />
-                }
-              />
+              {canTakeOrders && (
+                <SidebarNavItem
+                  tab="tables"
+                  activeTab={activeTab}
+                  onSelect={handleTabSelect}
+                  label="Tables"
+                  icon={
+                    <IconTable size={22} color={activeTab === "tables" ? "#FFFFFF" : "currentColor"} />
+                  }
+                />
+              )}
 
               <PermissionGate action="manage_menu">
                 <SidebarNavItem

@@ -36,6 +36,7 @@ import {
   isItemInTimeWindow,
 } from "../lib/menuService";
 import { useAuth } from "../store/useAuth";
+import { can } from "../lib/permissions";
 import ReceiptModal from "./ReceiptModal";
 import { ReceiptData } from "../lib/receiptService";
 import {
@@ -70,9 +71,15 @@ interface OrderManagementProps {
 
 export default function OrderManagement({ initialTableId, onSwitchToTables }: OrderManagementProps = {}) {
   const { user: currentUser } = useAuth();
+  const canCreateOrder = can(currentUser?.role, "create_order");
+  const canProcessPayment = can(currentUser?.role, "process_payment");
+  const canVoidOrder = can(currentUser?.role, "void_order");
 
-  // Navigation Subtabs
-  const [activeSubtab, setActiveSubtab] = useState<"new_order" | "active_orders" | "table_operations">("new_order");
+  // Navigation Subtabs — kitchen-only staff (no create_order permission) land
+  // straight on Active Orders since they have no use for the order builder.
+  const [activeSubtab, setActiveSubtab] = useState<"new_order" | "active_orders" | "table_operations">(
+    canCreateOrder ? "new_order" : "active_orders"
+  );
 
   // Notifications
   const [error, setError] = useState<string | null>(null);
@@ -641,8 +648,12 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
     <div className="card full-width-card">
       <div className="card-header-row">
         <div>
-          <h4>Order Management System</h4>
-          <p className="subtitle">Create takeaway orders, send them to the kitchen, and complete payment.</p>
+          <h4>{canCreateOrder ? "Order Management System" : "Kitchen Order Queue"}</h4>
+          <p className="subtitle">
+            {canCreateOrder
+              ? "Create takeaway orders, send them to the kitchen, and complete payment."
+              : "View incoming orders and update their status as you prepare them."}
+          </p>
         </div>
       </div>
 
@@ -659,13 +670,15 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
 
       {/* Subtabs Navigation */}
       <div className="sub-nav-tabs">
-        <button
-          type="button"
-          className={`sub-nav-tab ${activeSubtab === "new_order" ? "active" : ""}`}
-          onClick={() => setActiveSubtab("new_order")}
-        >
-          <IconPlus size={16} /> Take Order
-        </button>
+        {canCreateOrder && (
+          <button
+            type="button"
+            className={`sub-nav-tab ${activeSubtab === "new_order" ? "active" : ""}`}
+            onClick={() => setActiveSubtab("new_order")}
+          >
+            <IconPlus size={16} /> Take Order
+          </button>
+        )}
         <button
           type="button"
           className={`sub-nav-tab ${activeSubtab === "active_orders" ? "active" : ""}`}
@@ -678,7 +691,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
       {/* ─────────────────────────────────────────────────────────────────────── */}
       {/* SUBTAB 1: NEW ORDER & CART BUILDER (T-029, T-030, T-031, T-032)         */}
       {/* ─────────────────────────────────────────────────────────────────────── */}
-      {activeSubtab === "new_order" && (
+      {activeSubtab === "new_order" && canCreateOrder && (
         <>
           <div className="pos-order-layout">
             {/* LEFT: Order Type + Table Selection + Menu Browser */}
@@ -1185,10 +1198,12 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             <div className="active-orders-empty">
               <IconReceipt size={34} color="var(--text-muted)" />
               <h5>No active orders</h5>
-              <p>New orders will appear here when they are saved.</p>
-              <button type="button" className="btn-primary" onClick={() => setActiveSubtab("new_order")}>
-                <IconPlus size={16} /> Take an order
-              </button>
+              <p>{canCreateOrder ? "New orders will appear here when they are saved." : "Orders sent from the front counter will appear here."}</p>
+              {canCreateOrder && (
+                <button type="button" className="btn-primary" onClick={() => setActiveSubtab("new_order")}>
+                  <IconPlus size={16} /> Take an order
+                </button>
+              )}
             </div>
           ) : (
             <div className="active-order-card-list">
@@ -1217,16 +1232,20 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                     </div>
 
                     <div className="active-order-actions">
-                      <button type="button" className="btn-success btn-sm" onClick={() => handleOpenPayment(ord)}>
-                        <IconCash size={15} color="#FFFFFF" /> Pay
-                      </button>
+                      {canProcessPayment && (
+                        <button type="button" className="btn-success btn-sm" onClick={() => handleOpenPayment(ord)}>
+                          <IconCash size={15} color="#FFFFFF" /> Pay
+                        </button>
+                      )}
                       <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintKitchenTicket(ord)}>
                         <IconChef size={15} /> KOT
                       </button>
-                      <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintCustomerReceipt(ord)}>
-                        <IconReceipt size={15} /> Receipt
-                      </button>
-                      {ord.status === "OPEN" && (
+                      {canProcessPayment && (
+                        <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintCustomerReceipt(ord)}>
+                          <IconReceipt size={15} /> Receipt
+                        </button>
+                      )}
+                      {ord.status === "OPEN" && canCreateOrder && (
                         <button type="button" className="btn-primary btn-sm" onClick={() => handleSendToKitchen(ord.id)}>
                           <IconChef size={15} color="#FFFFFF" /> Send to kitchen
                         </button>
@@ -1239,9 +1258,11 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                       <button type="button" className="btn-secondary btn-sm" onClick={() => handleOpenOrderDetails(ord)}>
                         View items
                       </button>
-                      <button type="button" className="active-order-void" onClick={() => openVoidOrderDialog(ord.id)} aria-label={`Void order ${ord.id.slice(0, 8)}`}>
-                        <IconClose size={15} />
-                      </button>
+                      {canVoidOrder && (
+                        <button type="button" className="active-order-void" onClick={() => openVoidOrderDialog(ord.id)} aria-label={`Void order ${ord.id.slice(0, 8)}`}>
+                          <IconClose size={15} />
+                        </button>
+                      )}
                     </div>
                   </article>
                 );
@@ -1607,13 +1628,15 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         </span>
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="btn-danger btn-sm"
-                          onClick={() => openVoidItemDialog(selectedOrderDetails.id, item.id)}
-                        >
-                          Void Item
-                        </button>
+                        {canVoidOrder && (
+                          <button
+                            type="button"
+                            className="btn-danger btn-sm"
+                            onClick={() => openVoidItemDialog(selectedOrderDetails.id, item.id)}
+                          >
+                            Void Item
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1635,16 +1658,18 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 >
                   🍳 Print KOT
                 </button>
-                <button
-                  type="button"
-                  className="btn-secondary btn-sm"
-                  onClick={() => {
-                    handlePrintCustomerReceipt(selectedOrderDetails);
-                  }}
-                >
-                  🧾 Print Receipt
-                </button>
-                {selectedOrderDetails.status !== "CLOSED" && (
+                {canProcessPayment && (
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => {
+                      handlePrintCustomerReceipt(selectedOrderDetails);
+                    }}
+                  >
+                    🧾 Print Receipt
+                  </button>
+                )}
+                {selectedOrderDetails.status !== "CLOSED" && canProcessPayment && (
                   <button
                     type="button"
                     className="btn-success btn-sm"
