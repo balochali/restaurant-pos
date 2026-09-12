@@ -2479,6 +2479,146 @@ body {
   flex-shrink: 0;
 }
 
+/* ─── Table Selector Grid (Take Order screen) ──────────────────────────────── */
+.table-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.table-select-card {
+  position: relative;
+  padding: 12px 10px;
+  text-align: center;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-light);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.table-select-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.table-select-card.is-selected {
+  border-color: var(--bordo);
+  background: rgba(108, 21, 30, 0.05);
+  box-shadow: 0 0 0 3px rgba(108, 21, 30, 0.1);
+}
+
+.table-select-card.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.table-select-card.is-disabled:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.table-select-number {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.table-select-card.is-selected .table-select-number {
+  color: var(--bordo);
+}
+
+.table-select-capacity {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.table-select-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bordo);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-status-chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.table-status-chip.status-free {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.table-status-chip.status-free .dot {
+  background: var(--green);
+}
+
+.table-status-chip.status-occupied {
+  background: rgba(192, 57, 43, 0.1);
+  color: #C0392B;
+}
+
+.table-status-chip.status-occupied .dot {
+  background: #C0392B;
+}
+
+.table-status-chip.status-reserved {
+  background: rgba(217, 119, 6, 0.12);
+  color: #B45309;
+}
+
+.table-status-chip.status-reserved .dot {
+  background: #D97706;
+}
+
+.table-status-chip.status-needs_cleaning {
+  background: #EEF2F6;
+  color: #3B5166;
+}
+
+.table-status-chip.status-needs_cleaning .dot {
+  background: #3B5166;
+}
+
+@media (max-width: 480px) {
+  .table-select-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  }
+}
+
 /* ─── Modals & Dialogs ─────────────────────────────────────────────────────── */
 .modal-overlay,
 .modal-backdrop {

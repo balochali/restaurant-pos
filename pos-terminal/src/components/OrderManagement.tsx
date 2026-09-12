@@ -728,13 +728,14 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         </button>
                       )}
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: "8px" }}>
+                    <div className="table-select-grid">
                       {tables.map((tbl) => {
                         const isSelected = selectedTableId === tbl.id;
                         const isFree = tbl.status === "FREE";
                         return (
                           <div
                             key={tbl.id}
+                            className={`table-select-card ${isSelected ? "is-selected" : ""} ${!isFree ? "is-disabled" : ""}`}
                             onClick={() => {
                               if (!isFree) {
                                 setError(
@@ -745,30 +746,18 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                               setSelectedTableId(tbl.id);
                             }}
                             title={isFree ? undefined : `Table ${tbl.number} is ${tbl.status.replace("_", " ").toLowerCase()}`}
-                            style={{
-                              padding: "10px 8px",
-                              textAlign: "center",
-                              borderRadius: "12px",
-                              border: isSelected ? "2px solid var(--accent)" : "1.5px solid var(--border-light)",
-                              background: isSelected
-                                ? "var(--accent-light)"
-                                : isFree
-                                  ? "#edfaf4"
-                                  : "#fff1f0",
-                              cursor: isFree ? "pointer" : "not-allowed",
-                              opacity: isFree || isSelected ? 1 : 0.65,
-                              transition: "all 0.15s ease",
-                            }}
                           >
-                            <div style={{ fontWeight: "800", fontSize: "15px", color: isSelected ? "var(--accent-dark)" : "var(--text-primary)" }}>
-                              {tbl.number}
-                            </div>
-                            <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
-                              👥 {tbl.capacity}p
-                            </div>
-                            <div style={{ fontSize: "10px", fontWeight: "700", marginTop: "4px", color: isFree ? "#1a7a4a" : "#c0392b" }}>
-                              {tbl.status}
-                            </div>
+                            {isSelected && (
+                              <span className="table-select-check">
+                                <IconCheck size={10} color="#FFFFFF" />
+                              </span>
+                            )}
+                            <span className="table-select-number">{tbl.number}</span>
+                            <span className="table-select-capacity">👥 {tbl.capacity}p</span>
+                            <span className={`table-status-chip status-${tbl.status.toLowerCase()}`}>
+                              <span className="dot" />
+                              {tbl.status.replace("_", " ")}
+                            </span>
                           </div>
                         );
                       })}
