@@ -3416,3 +3416,411 @@ body {
     border-radius: 12px;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   HIGH-CONTRAST MULTI-COLOR RESTAURANT POS DESIGN SYSTEM
+   Deliberate vibrant multi-palette ensuring each module, order state, channel,
+   and action button stands out with rich restaurant personality.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Vibrant Multi-Color Department Navigation ─────────────────────────── */
+
+/* Cashier POS / Kitchen Queue — Emerald Green */
+.sidebar-nav-item.tab-cashier_pos .sidebar-nav-icon {
+  color: #059669;
+}
+.sidebar-nav-item.tab-cashier_pos:hover {
+  background: #ECFDF5;
+  color: #047857;
+  border-color: #A7F3D0;
+}
+.sidebar-nav-item.tab-cashier_pos.active {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35) !important;
+}
+.sidebar-nav-item.tab-cashier_pos.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-cashier_pos.active::before {
+  background: #6EE7B7 !important;
+}
+
+/* Tables Floor Plan — Golden Amber */
+.sidebar-nav-item.tab-tables .sidebar-nav-icon {
+  color: #D97706;
+}
+.sidebar-nav-item.tab-tables:hover {
+  background: #FFFBEB;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+.sidebar-nav-item.tab-tables.active {
+  background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #B45309 !important;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.35) !important;
+}
+.sidebar-nav-item.tab-tables.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-tables.active::before {
+  background: #FDE68A !important;
+}
+
+/* Menu Catalog — Fiery Chef Coral / Red */
+.sidebar-nav-item.tab-menu .sidebar-nav-icon {
+  color: #E11D48;
+}
+.sidebar-nav-item.tab-menu:hover {
+  background: #FFF1F2;
+  color: #BE123C;
+  border-color: #FECDD3;
+}
+.sidebar-nav-item.tab-menu.active {
+  background: linear-gradient(135deg, #E11D48 0%, #F43F5E 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #BE123C !important;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35) !important;
+}
+.sidebar-nav-item.tab-menu.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-menu.active::before {
+  background: #FECDD3 !important;
+}
+
+/* Inventory & Stock — Caribbean Cyan */
+.sidebar-nav-item.tab-inventory .sidebar-nav-icon {
+  color: #0891B2;
+}
+.sidebar-nav-item.tab-inventory:hover {
+  background: #ECFEFF;
+  color: #0E7490;
+  border-color: #A5F3FC;
+}
+.sidebar-nav-item.tab-inventory.active {
+  background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #0E7490 !important;
+  box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35) !important;
+}
+.sidebar-nav-item.tab-inventory.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-inventory.active::before {
+  background: #A5F3FC !important;
+}
+
+/* Staff & User Management — Royal Indigo */
+.sidebar-nav-item.tab-users .sidebar-nav-icon {
+  color: #4F46E5;
+}
+.sidebar-nav-item.tab-users:hover {
+  background: #EEF2FF;
+  color: #4338CA;
+  border-color: #C7D2FE;
+}
+.sidebar-nav-item.tab-users.active {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #4338CA !important;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35) !important;
+}
+.sidebar-nav-item.tab-users.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-users.active::before {
+  background: #C7D2FE !important;
+}
+
+/* Total Orders / Analytics — Vivid Purple */
+.sidebar-nav-item.tab-reports .sidebar-nav-icon {
+  color: #7C3AED;
+}
+.sidebar-nav-item.tab-reports:hover {
+  background: #F5F3FF;
+  color: #6D28D9;
+  border-color: #DDD6FE;
+}
+.sidebar-nav-item.tab-reports.active {
+  background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #6D28D9 !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35) !important;
+}
+.sidebar-nav-item.tab-reports.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-reports.active::before {
+  background: #DDD6FE !important;
+}
+
+/* Activity Log / Audit — Hot Pink / Rose */
+.sidebar-nav-item.tab-audit .sidebar-nav-icon {
+  color: #DB2777;
+}
+.sidebar-nav-item.tab-audit:hover {
+  background: #FDF2F8;
+  color: #BE185D;
+  border-color: #FBCFE8;
+}
+.sidebar-nav-item.tab-audit.active {
+  background: linear-gradient(135deg, #DB2777 0%, #EC4899 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #BE185D !important;
+  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.35) !important;
+}
+.sidebar-nav-item.tab-audit.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-audit.active::before {
+  background: #FBCFE8 !important;
+}
+
+/* Mobile Nav Multi-Color Highlighting */
+.mobile-nav-item.tab-cashier_pos.active { color: #059669; }
+.mobile-nav-item.tab-tables.active { color: #D97706; }
+.mobile-nav-item.tab-menu.active { color: #E11D48; }
+.mobile-nav-item.tab-inventory.active { color: #0891B2; }
+.mobile-nav-item.tab-users.active { color: #4F46E5; }
+.mobile-nav-item.tab-reports.active { color: #7C3AED; }
+.mobile-nav-item.tab-audit.active { color: #DB2777; }
+
+/* ─── 2. Order Channel Action Buttons ───────────────────────────────────────── */
+.channel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 1.5px solid transparent;
+}
+
+.channel-btn:hover {
+  transform: translateY(-2px);
+}
+
+.channel-btn-dine-in {
+  background: #FFFFFF;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+.channel-btn-dine-in:hover {
+  background: #ECFDF5;
+  border-color: #059669;
+}
+.channel-btn-dine-in.active {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+}
+
+.channel-btn-takeaway {
+  background: #FFFFFF;
+  color: #9A3412;
+  border-color: #FDBA74;
+}
+.channel-btn-takeaway:hover {
+  background: #FFF7ED;
+  border-color: #EA580C;
+}
+.channel-btn-takeaway.active {
+  background: linear-gradient(135deg, #EA580C 0%, #F97316 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #C2410C !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
+}
+
+.channel-btn-delivery {
+  background: #FFFFFF;
+  color: #1E40AF;
+  border-color: #93C5FD;
+}
+.channel-btn-delivery:hover {
+  background: #EFF6FF;
+  border-color: #2563EB;
+}
+.channel-btn-delivery.active {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #1D4ED8 !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+/* ─── 3. Multi-Color Category Filter Pills ─────────────────────────────────── */
+.category-tab {
+  transition: all 0.18s ease;
+  font-weight: 600;
+}
+.category-tab:hover {
+  transform: translateY(-1px);
+}
+.category-tab-all.active {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  border-color: #0F172A !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3) !important;
+}
+.cat-color-0.active {
+  background: linear-gradient(135deg, #E11D48, #F43F5E) !important;
+  color: #FFFFFF !important;
+  border-color: #BE123C !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35) !important;
+}
+.cat-color-1.active {
+  background: linear-gradient(135deg, #0891B2, #06B6D4) !important;
+  color: #FFFFFF !important;
+  border-color: #0E7490 !important;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.35) !important;
+}
+.cat-color-2.active {
+  background: linear-gradient(135deg, #D97706, #F59E0B) !important;
+  color: #FFFFFF !important;
+  border-color: #B45309 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35) !important;
+}
+.cat-color-3.active {
+  background: linear-gradient(135deg, #DB2777, #EC4899) !important;
+  color: #FFFFFF !important;
+  border-color: #BE185D !important;
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.35) !important;
+}
+.cat-color-4.active {
+  background: linear-gradient(135deg, #7C3AED, #8B5CF6) !important;
+  color: #FFFFFF !important;
+  border-color: #6D28D9 !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35) !important;
+}
+.cat-color-5.active {
+  background: linear-gradient(135deg, #EA580C, #F97316) !important;
+  color: #FFFFFF !important;
+  border-color: #C2410C !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35) !important;
+}
+.cat-color-6.active {
+  background: linear-gradient(135deg, #059669, #10B981) !important;
+  color: #FFFFFF !important;
+  border-color: #047857 !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35) !important;
+}
+.cat-color-7.active {
+  background: linear-gradient(135deg, #4F46E5, #6366F1) !important;
+  color: #FFFFFF !important;
+  border-color: #4338CA !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35) !important;
+}
+
+/* ─── 4. High-Contrast Action Buttons (POS Register) ────────────────────────── */
+.btn-pay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  border: 1px solid #047857;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+  transition: all 0.18s ease;
+}
+.btn-pay:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+}
+
+.btn-kitchen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
+  color: #FFFFFF;
+  border: 1px solid #C2410C;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  transition: all 0.18s ease;
+}
+.btn-kitchen:hover:not(:disabled) {
+  background: #C2410C;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45);
+}
+
+.btn-receipt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #FFFFFF;
+  color: #0E7490;
+  border: 1.5px solid #67E8F9;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.btn-receipt:hover:not(:disabled) {
+  background: #ECFEFF;
+  border-color: #0891B2;
+}
+
+/* ─── 5. Item Cards & Price Tags ───────────────────────────────────────────── */
+.item-price-tag {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: #047857 !important;
+  background: #ECFDF5 !important;
+  padding: 3px 9px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid #A7F3D0 !important;
+}
+
+/* ─── 6. High-Contrast User Role Badges ─────────────────────────────────────── */
+.role-ADMIN {
+  background: #F3E8FF !important;
+  color: #7C3AED !important;
+  border: 1.5px solid #DDD6FE !important;
+  font-weight: 800 !important;
+}
+.role-MANAGER {
+  background: #EFF6FF !important;
+  color: #2563EB !important;
+  border: 1.5px solid #BFDBFE !important;
+  font-weight: 800 !important;
+}
+.role-CASHIER {
+  background: #ECFDF5 !important;
+  color: #059669 !important;
+  border: 1.5px solid #A7F3D0 !important;
+  font-weight: 800 !important;
+}
+.role-WAITER {
+  background: #FFFBEB !important;
+  color: #D97706 !important;
+  border: 1.5px solid #FDE68A !important;
+  font-weight: 800 !important;
+}
+.role-KITCHEN_STAFF {
+  background: #FFF1F2 !important;
+  color: #E11D48 !important;
+  border: 1.5px solid #FECDD3 !important;
+  font-weight: 800 !important;
+}

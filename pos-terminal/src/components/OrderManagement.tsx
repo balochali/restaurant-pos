@@ -702,21 +702,21 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <button
                     type="button"
-                    className={`btn-secondary ${orderSource === "DINE_IN" ? "btn-primary" : ""}`}
+                    className={`channel-btn channel-btn-dine-in ${orderSource === "DINE_IN" ? "active" : ""}`}
                     onClick={() => setOrderSource("DINE_IN")}
                   >
-                    🪑 Dine-In
+                    🍽️ Dine-In
                   </button>
                   <button
                     type="button"
-                    className={`btn-secondary ${orderSource === "TAKEAWAY" ? "btn-primary" : ""}`}
+                    className={`channel-btn channel-btn-takeaway ${orderSource === "TAKEAWAY" ? "active" : ""}`}
                     onClick={() => setOrderSource("TAKEAWAY")}
                   >
-                    🥡 Takeaway
+                    🛍️ Takeaway
                   </button>
                   <button
                     type="button"
-                    className={`btn-secondary ${orderSource === "DELIVERY" ? "btn-primary" : ""}`}
+                    className={`channel-btn channel-btn-delivery ${orderSource === "DELIVERY" ? "active" : ""}`}
                     onClick={() => setOrderSource("DELIVERY")}
                   >
                     🛵 Delivery
@@ -843,17 +843,17 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "14px" }}>
                   <button
                     type="button"
-                    className={`sub-nav-tab ${selectedCategory === "ALL" ? "active" : ""}`}
+                    className={`sub-nav-tab category-tab-all ${selectedCategory === "ALL" ? "active" : ""}`}
                     onClick={() => setSelectedCategory("ALL")}
                   >
                     <IconFilter size={14} />
                     All Items ({menuItems.length})
                   </button>
-                  {categories.map((cat) => (
+                  {categories.map((cat, idx) => (
                     <button
                       key={cat.id}
                       type="button"
-                      className={`sub-nav-tab ${selectedCategory === cat.id ? "active" : ""}`}
+                      className={`sub-nav-tab category-tab cat-color-${idx % 8} ${selectedCategory === cat.id ? "active" : ""}`}
                       onClick={() => setSelectedCategory(cat.id)}
                     >
                       <IconUtensils size={14} />
@@ -1035,7 +1035,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   <button
                     type="button"
-                    className="btn-primary"
+                    className="btn-kitchen"
                     style={{ width: "100%", padding: "12px" }}
                     disabled={cart.length === 0}
                     onClick={() => handlePlaceOrder(true, "KITCHEN")}
@@ -1046,7 +1046,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     <button
                       type="button"
-                      className="btn-secondary"
+                      className="btn-receipt"
                       style={{ padding: "9px 6px", fontSize: "12px", fontWeight: "700" }}
                       disabled={cart.length === 0}
                       onClick={() => handlePlaceOrder(false, "CUSTOMER")}
@@ -1233,11 +1233,11 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
 
                     <div className="active-order-actions">
                       {canProcessPayment && (
-                        <button type="button" className="btn-success btn-sm" onClick={() => handleOpenPayment(ord)}>
+                        <button type="button" className="btn-pay btn-sm" onClick={() => handleOpenPayment(ord)}>
                           <IconCash size={15} color="#FFFFFF" /> Pay
                         </button>
                       )}
-                      <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintKitchenTicket(ord)}>
+                      <button type="button" className="btn-receipt btn-sm" onClick={() => handlePrintKitchenTicket(ord)}>
                         <IconChef size={15} /> KOT
                       </button>
                       {canProcessPayment && (
@@ -1246,7 +1246,7 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         </button>
                       )}
                       {ord.status === "OPEN" && canCreateOrder && (
-                        <button type="button" className="btn-primary btn-sm" onClick={() => handleSendToKitchen(ord.id)}>
+                        <button type="button" className="btn-kitchen btn-sm" onClick={() => handleSendToKitchen(ord.id)}>
                           <IconChef size={15} color="#FFFFFF" /> Send to kitchen
                         </button>
                       )}

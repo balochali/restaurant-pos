@@ -207,6 +207,74 @@ export async function getOrderItems(orderId: string): Promise<DbOrderItem[]> {
   );
 }
 
+export interface TopSellingItem {
+  itemId: string;
+  itemName: string;
+  categoryName: string;
+  totalQty: number;
+  totalRevenue: number;
+}
+
+export interface CategorySalesSummary {
+  categoryName: string;
+  totalQty: number;
+  totalRevenue: number;
+}
+
+export async function getTopSellingItems(limit = 8, cutoffDateIso?: string): Promise<TopSellingItem[]> {
+  const db = await getDb();
+  let query = `
+    SELECT 
+      oi.menu_item_id as itemId,
+      COALESCE(mi.name, oi.notes, 'Special Item') as itemName,
+      COALESCE(mc.name, 'General') as categoryName,
+      SUM(oi.quantity) as totalQty,
+      SUM(oi.quantity * oi.unit_price) as totalRevenue
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
+    LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+    WHERE o.status = 'CLOSED' AND oi.status != 'VOIDED'
+  `;
+  const params: (string | number)[] = [];
+  if (cutoffDateIso) {
+    query += ` AND o.created_locally_at >= ?`;
+    params.push(cutoffDateIso);
+  }
+  query += `
+    GROUP BY oi.menu_item_id, itemName, categoryName
+    ORDER BY totalQty DESC, totalRevenue DESC
+    LIMIT ?
+  `;
+  params.push(limit);
+  return db.select<TopSellingItem[]>(query, params);
+}
+
+export async function getCategorySales(cutoffDateIso?: string): Promise<CategorySalesSummary[]> {
+  const db = await getDb();
+  let query = `
+    SELECT 
+      COALESCE(mc.name, 'General') as categoryName,
+      SUM(oi.quantity) as totalQty,
+      SUM(oi.quantity * oi.unit_price) as totalRevenue
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
+    LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+    WHERE o.status = 'CLOSED' AND oi.status != 'VOIDED'
+  `;
+  const params: string[] = [];
+  if (cutoffDateIso) {
+    query += ` AND o.created_locally_at >= ?`;
+    params.push(cutoffDateIso);
+  }
+  query += `
+    GROUP BY categoryName
+    ORDER BY totalRevenue DESC
+  `;
+  return db.select<CategorySalesSummary[]>(query, params);
+}
+
 // ─── T-030: Cart / Line Item Builder ─────────────────────────────────────────
 
 export async function addOrderItem(

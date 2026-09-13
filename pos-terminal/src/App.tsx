@@ -52,7 +52,7 @@ function SidebarNavItem({ tab, activeTab, onSelect, icon, label }: SidebarNavIte
   return (
     <button
       type="button"
-      className={`sidebar-nav-item ${isActive ? "active" : ""}`}
+      className={`sidebar-nav-item tab-${tab} ${isActive ? "active" : ""}`}
       onClick={() => onSelect(tab)}
       aria-current={isActive ? "page" : undefined}
       title={label}
@@ -379,7 +379,7 @@ function TerminalContent() {
           <button
             key={tab}
             type="button"
-            className={`mobile-nav-item ${activeTab === tab ? "active" : ""}`}
+            className={`mobile-nav-item tab-${tab} ${activeTab === tab ? "active" : ""}`}
             onClick={() => handleTabSelect(tab)}
             aria-current={activeTab === tab ? "page" : undefined}
           >
