@@ -221,6 +221,15 @@ export const IconFilter: React.FC<IconProps> = ({ size = 18, color = "currentCol
   </svg>
 );
 
+export const IconChart: React.FC<IconProps> = ({ size = 20, color = "currentColor", ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="12" y1="20" x2="12" y2="10" />
+    <line x1="18" y1="20" x2="18" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="16" />
+    <line x1="3" y1="20" x2="21" y2="20" />
+  </svg>
+);
+
 export const IconLock: React.FC<IconProps> = ({ size = 20, color = "currentColor", ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -233,3 +242,21 @@ export const IconShield: React.FC<IconProps> = ({ size = 20, color = "currentCol
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
+
+export const IconTakeaway: React.FC<IconProps> = ({ size = 18, color = "currentColor", ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <path d="M16 10a4 4 0 0 1-8 0" />
+  </svg>
+);
+
+export const IconDelivery: React.FC<IconProps> = ({ size = 18, color = "currentColor", ...props }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="1" y="3" width="15" height="13" rx="1" />
+    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+    <circle cx="5.5" cy="18.5" r="2.5" />
+    <circle cx="18.5" cy="18.5" r="2.5" />
+  </svg>
+);
+

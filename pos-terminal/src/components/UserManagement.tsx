@@ -17,9 +17,18 @@ import {
   IconCheck,
   IconAlert,
   IconClose,
+  IconSearch,
 } from "./Icons";
 
 const ROLES: Role[] = ["ADMIN", "MANAGER", "CASHIER", "WAITER", "KITCHEN_STAFF"];
+
+const ROLE_AVATAR_GRADIENT: Record<Role, string> = {
+  ADMIN: "var(--bordo-gradient)",
+  MANAGER: "linear-gradient(135deg, #8C4D15 0%, #C97B2E 100%)",
+  CASHIER: "var(--green-gradient)",
+  WAITER: "var(--green-gradient)",
+  KITCHEN_STAFF: "linear-gradient(135deg, #3B5166 0%, #5D7A93 100%)",
+};
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -39,6 +48,7 @@ export default function UserManagement() {
   const [role, setRole] = useState<Role>("CASHIER");
   const [isActive, setIsActive] = useState(1);
   const [formError, setFormError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const refreshUsersList = () => {
     setLoading(true);
@@ -173,9 +183,18 @@ export default function UserManagement() {
       setSuccess(`Deleted staff account "${targetUser.name}".`);
       refreshUsersList();
     } catch (err) {
-      setError("Failed to delete user: " + String(err));
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
+
+  const filteredUsers = users.filter((u) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+  });
+
+  const activeCount = users.filter((u) => u.is_active === 1).length;
+  const inactiveCount = users.length - activeCount;
 
   return (
     <div className="card full-width-card" style={{ padding: "20px" }}>
@@ -206,75 +225,105 @@ export default function UserManagement() {
           <p style={{ marginTop: "8px" }}>Loading staff accounts...</p>
         </div>
       ) : (
-        <div className="table-responsive" style={{ border: "1px solid var(--border-light)", borderRadius: "14px", overflow: "hidden" }}>
-          <table className="staff-table" style={{ margin: 0 }}>
-            <thead>
-              <tr>
-                <th>Staff Name</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className={u.is_active === 0 ? "row-inactive" : ""}>
-                  <td>
-                    <div className="user-cell" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div className="avatar-sm" style={{ background: u.role === "ADMIN" ? "var(--primary)" : "var(--secondary)", color: "#fff", fontWeight: "700" }}>
-                        {u.name.charAt(0)}
-                      </div>
-                      <div>
-                        <strong>{u.name}</strong>
-                        {u.role === "ADMIN" && <IconCrown size={12} color="#D97706" style={{ marginLeft: "4px" }} />}
-                      </div>
+        <>
+          <div className="stats-grid" style={{ marginBottom: "20px" }}>
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: "rgba(108, 21, 30, 0.08)", color: "var(--primary)" }}>
+                <IconUsers size={20} color="var(--primary)" />
+              </div>
+              <div>
+                <div className="stat-value">{users.length}</div>
+                <div className="stat-label">Total Staff</div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: "rgba(15, 61, 58, 0.08)", color: "var(--secondary)" }}>
+                <IconCheck size={20} color="var(--secondary)" />
+              </div>
+              <div>
+                <div className="stat-value" style={{ color: "var(--secondary)" }}>{activeCount}</div>
+                <div className="stat-label">Active</div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: "rgba(217, 119, 6, 0.1)", color: "#D97706" }}>
+                <IconAlert size={20} color="#D97706" />
+              </div>
+              <div>
+                <div className="stat-value" style={{ color: "#D97706" }}>{inactiveCount}</div>
+                <div className="stat-label">Inactive</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="staff-search-field" style={{ marginBottom: "18px" }}>
+            <IconSearch size={18} className="staff-search-icon" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search staff by name or username..."
+              aria-label="Search staff"
+            />
+          </div>
+
+          {filteredUsers.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+              <IconUsers size={32} color="var(--text-muted)" />
+              <p style={{ marginTop: "8px" }}>No staff members match "{searchQuery}".</p>
+            </div>
+          ) : (
+            <div className="staff-grid">
+              {filteredUsers.map((u) => (
+                <div key={u.id} className={`staff-card ${u.is_active === 0 ? "row-inactive" : ""}`}>
+                  <div className="staff-card-top">
+                    <div className="staff-avatar-lg" style={{ background: ROLE_AVATAR_GRADIENT[u.role] }}>
+                      {u.name.charAt(0).toUpperCase()}
                     </div>
-                  </td>
-                  <td>
-                    <code style={{ background: "var(--surface-warm)", padding: "3px 8px", borderRadius: "6px", fontSize: "12px" }}>
-                      {u.username}
-                    </code>
-                  </td>
-                  <td>
-                    <span className={`role-pill role-${u.role}`}>{u.role}</span>
-                  </td>
-                  <td>
                     <span className={`status-badge ${u.is_active === 1 ? "active" : "inactive"}`}>
                       {u.is_active === 1 ? "Active" : "Inactive"}
                     </span>
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    <div className="action-buttons" style={{ justifyContent: "flex-end" }}>
-                      <button
-                        type="button"
-                        className="btn-secondary btn-sm"
-                        onClick={() => openEditModal(u)}
-                      >
-                        <IconEdit size={13} /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn-sm ${u.is_active === 1 ? "btn-warning" : "btn-success"}`}
-                        onClick={() => handleToggleStatus(u)}
-                      >
-                        {u.is_active === 1 ? "Deactivate" : "Activate"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-danger btn-sm"
-                        onClick={() => handleDelete(u)}
-                        disabled={u.id === currentUser?.id}
-                      >
-                        <IconTrash size={13} />
-                      </button>
+                  </div>
+
+                  <div className="staff-card-identity">
+                    <div className="staff-card-name">
+                      {u.name}
+                      {u.role === "ADMIN" && <IconCrown size={13} color="#D97706" />}
                     </div>
-                  </td>
-                </tr>
+                    <code className="staff-card-username">@{u.username}</code>
+                    <div className="staff-card-tags">
+                      <span className={`role-pill role-${u.role}`}>{u.role}</span>
+                    </div>
+                  </div>
+
+                  <div className="staff-card-actions">
+                    <button type="button" className="btn-secondary btn-sm" onClick={() => openEditModal(u)}>
+                      <IconEdit size={13} /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-sm ${u.is_active === 1 ? "btn-warning" : "btn-success"}`}
+                      onClick={() => handleToggleStatus(u)}
+                    >
+                      {u.is_active === 1 ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-danger btn-sm"
+                      onClick={() => handleDelete(u)}
+                      disabled={u.id === currentUser?.id}
+                      title={u.id === currentUser?.id ? "You can't delete your own account" : "Delete staff member"}
+                    >
+                      <IconTrash size={13} />
+                    </button>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal Dialog for Add / Edit */}

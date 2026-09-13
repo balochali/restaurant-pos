@@ -9,6 +9,8 @@ import AuditLogViewer from "./components/AuditLogViewer";
 import MenuManagement from "./components/MenuManagement";
 import OrderManagement from "./components/OrderManagement";
 import TableManagement from "./components/TableManagement";
+import TotalOrders from "./components/TotalOrders";
+import { can } from "./lib/permissions";
 import {
   IconPosTerminal,
   IconTable,
@@ -16,13 +18,15 @@ import {
   IconUsers,
   IconInventory,
   IconAudit,
+  IconChart,
+  IconChef,
   IconCrown,
   IconSwitchUser,
   IconLogout,
 } from "./components/Icons";
 import "./App.css";
 
-type Tab = "cashier_pos" | "tables" | "menu" | "users" | "inventory" | "audit";
+type Tab = "cashier_pos" | "tables" | "menu" | "users" | "inventory" | "reports" | "audit";
 
 interface SidebarNavItemProps {
   tab: Tab;
@@ -48,7 +52,7 @@ function SidebarNavItem({ tab, activeTab, onSelect, icon, label }: SidebarNavIte
   return (
     <button
       type="button"
-      className={`sidebar-nav-item ${isActive ? "active" : ""}`}
+      className={`sidebar-nav-item tab-${tab} ${isActive ? "active" : ""}`}
       onClick={() => onSelect(tab)}
       aria-current={isActive ? "page" : undefined}
       title={label}
@@ -62,6 +66,9 @@ function SidebarNavItem({ tab, activeTab, onSelect, icon, label }: SidebarNavIte
 function TerminalContent() {
   const { user, login, logout, switchUser } = useAuth();
   const isAdminOrManager = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const canTakeOrders = can(user?.role, "create_order");
+  const canViewKitchenQueue = can(user?.role, "view_kitchen_queue");
+  const showOrdersTab = canTakeOrders || canViewKitchenQueue;
 
   const [activeTab, setActiveTab] = useState<Tab>("cashier_pos");
   const [selectedTableForOrder, setSelectedTableForOrder] = useState<string>("");
@@ -101,10 +108,16 @@ function TerminalContent() {
 
   // Tabs visible in the bottom nav (most important ones first)
   const bottomNavTabs = [
-    { tab: "cashier_pos" as Tab, icon: <IconPosTerminal size={18} color="currentColor" />, label: "Order" },
-    { tab: "tables" as Tab, icon: <IconTable size={18} color="currentColor" />, label: "Tables" },
+    ...(showOrdersTab ? [
+      { tab: "cashier_pos" as Tab, icon: <IconPosTerminal size={18} color="currentColor" />, label: canTakeOrders ? "Order" : "Kitchen" },
+    ] : []),
+    ...(canTakeOrders ? [
+      { tab: "tables" as Tab, icon: <IconTable size={18} color="currentColor" />, label: "Tables" },
+    ] : []),
     ...(isAdminOrManager ? [
       { tab: "menu" as Tab, icon: <IconMenu size={18} color="currentColor" />, label: "Menu" },
+    ] : []),
+    ...(can(user?.role, "manage_inventory") ? [
       { tab: "inventory" as Tab, icon: <IconInventory size={18} color="currentColor" />, label: "Stock" },
     ] : []),
   ];
@@ -134,28 +147,39 @@ function TerminalContent() {
             <div className="sidebar-section">
               <p className="sidebar-section-label">Daily</p>
 
-              <SidebarNavItem
-                tab="cashier_pos"
-                activeTab={activeTab}
-                onSelect={handleTabSelect}
-                label="Take Order"
-                icon={
-                  <IconPosTerminal
-                    size={22}
-                    color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"}
-                  />
-                }
-              />
+              {showOrdersTab && (
+                <SidebarNavItem
+                  tab="cashier_pos"
+                  activeTab={activeTab}
+                  onSelect={handleTabSelect}
+                  label={canTakeOrders ? "Take Order" : "Kitchen Orders"}
+                  icon={
+                    canTakeOrders ? (
+                      <IconPosTerminal
+                        size={22}
+                        color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"}
+                      />
+                    ) : (
+                      <IconChef
+                        size={22}
+                        color={activeTab === "cashier_pos" ? "#FFFFFF" : "currentColor"}
+                      />
+                    )
+                  }
+                />
+              )}
 
-              <SidebarNavItem
-                tab="tables"
-                activeTab={activeTab}
-                onSelect={handleTabSelect}
-                label="Tables"
-                icon={
-                  <IconTable size={22} color={activeTab === "tables" ? "#FFFFFF" : "currentColor"} />
-                }
-              />
+              {canTakeOrders && (
+                <SidebarNavItem
+                  tab="tables"
+                  activeTab={activeTab}
+                  onSelect={handleTabSelect}
+                  label="Tables"
+                  icon={
+                    <IconTable size={22} color={activeTab === "tables" ? "#FFFFFF" : "currentColor"} />
+                  }
+                />
+              )}
 
               <PermissionGate action="manage_menu">
                 <SidebarNavItem
@@ -196,6 +220,18 @@ function TerminalContent() {
                       size={22}
                       color={activeTab === "inventory" ? "#FFFFFF" : "currentColor"}
                     />
+                  }
+                />
+              </PermissionGate>
+
+              <PermissionGate action="view_reports">
+                <SidebarNavItem
+                  tab="reports"
+                  activeTab={activeTab}
+                  onSelect={handleTabSelect}
+                  label="Total Orders"
+                  icon={
+                    <IconChart size={22} color={activeTab === "reports" ? "#FFFFFF" : "currentColor"} />
                   }
                 />
               </PermissionGate>
@@ -306,6 +342,20 @@ function TerminalContent() {
               </PermissionGate>
             )}
 
+            {activeTab === "reports" && (
+              <PermissionGate
+                action="view_reports"
+                fallback={
+                  <div className="card">
+                    <h4>Access Restricted</h4>
+                    <p>You need permission to view sales reports.</p>
+                  </div>
+                }
+              >
+                <TotalOrders />
+              </PermissionGate>
+            )}
+
             {activeTab === "audit" && (
               <PermissionGate
                 action="view_reports"
@@ -329,7 +379,7 @@ function TerminalContent() {
           <button
             key={tab}
             type="button"
-            className={`mobile-nav-item ${activeTab === tab ? "active" : ""}`}
+            className={`mobile-nav-item tab-${tab} ${activeTab === tab ? "active" : ""}`}
             onClick={() => handleTabSelect(tab)}
             aria-current={activeTab === tab ? "page" : undefined}
           >

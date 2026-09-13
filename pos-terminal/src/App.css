@@ -58,10 +58,29 @@
   --border-light: #EBE4D8;
   --border-medium: #DACFC0;
   --border-color: #E2D9CC;
+
+  /* Short-hand aliases used across components — kept in sync with the
+     brand tokens above so a single source of truth drives both names. */
+  --primary: var(--bordo);
+  --secondary: var(--green);
+  --surface-warm: var(--cream-light);
+}
+
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 /* ─── Global Reset & Typography ────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -84,18 +103,39 @@ body {
 
 /* ─── Keyframe Animations ─────────────────────────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 21, 30, 0.4); }
-  50%      { box-shadow: 0 0 0 8px rgba(108, 21, 30, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(108, 21, 30, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(108, 21, 30, 0);
+  }
 }
 
 /* ─── PIN Login Screen ─────────────────────────────────────────────────────── */
@@ -521,6 +561,12 @@ body {
   background: var(--green-light);
   color: var(--green);
   border: 1px solid var(--green-border);
+}
+
+.role-KITCHEN_STAFF {
+  background: #EEF2F6;
+  color: #3B5166;
+  border: 1px solid #D7E1EA;
 }
 
 /* ─── Mode Switcher Bar (Admin vs Cashier) ─────────────────────────────────── */
@@ -1463,11 +1509,35 @@ body {
   white-space: nowrap;
 }
 
-.active-order-status.status-open { background: #EFF6FF; border-color: #BFDBFE; color: #1D4ED8; }
-.active-order-status.status-sent-to-kitchen { background: #FFF8E1; border-color: #FDE68A; color: #B45309; }
-.active-order-status.status-in-prep { background: #FEF3C7; border-color: #FCD34D; color: #B45309; }
-.active-order-status.status-ready { background: #ECFDF5; border-color: #A7F3D0; color: #047857; }
-.active-order-status.status-served { background: #F3F0FF; border-color: #DDD6FE; color: #6D28D9; }
+.active-order-status.status-open {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #1D4ED8;
+}
+
+.active-order-status.status-sent-to-kitchen {
+  background: #FFF8E1;
+  border-color: #FDE68A;
+  color: #B45309;
+}
+
+.active-order-status.status-in-prep {
+  background: #FEF3C7;
+  border-color: #FCD34D;
+  color: #B45309;
+}
+
+.active-order-status.status-ready {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  color: #047857;
+}
+
+.active-order-status.status-served {
+  background: #F3F0FF;
+  border-color: #DDD6FE;
+  color: #6D28D9;
+}
 
 .active-order-actions {
   display: flex;
@@ -1502,7 +1572,9 @@ body {
   cursor: pointer;
 }
 
-.active-order-void:hover { background: #FDE7E9; }
+.active-order-void:hover {
+  background: #FDE7E9;
+}
 
 .active-orders-empty {
   display: grid;
@@ -1516,26 +1588,81 @@ body {
   text-align: center;
 }
 
-.active-orders-empty h5 { margin: 4px 0 0; color: var(--text-primary); font-size: 16px; }
-.active-orders-empty p { margin: 0 0 8px; color: var(--text-secondary); font-size: 13px; }
+.active-orders-empty h5 {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.active-orders-empty p {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
 
 @media (max-width: 900px) {
-  .active-orders-toolbar { align-items: stretch; flex-direction: column; }
-  .active-order-summary { grid-template-columns: 120px minmax(0, 1fr) auto; }
-  .active-order-status { grid-column: 1 / -1; justify-self: start; }
+  .active-orders-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .active-order-summary {
+    grid-template-columns: 120px minmax(0, 1fr) auto;
+  }
+
+  .active-order-status {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
 }
 
 @media (max-width: 560px) {
-  .active-orders-controls { align-items: stretch; flex-direction: column; }
-  .active-orders-controls label { width: 100%; }
-  .active-orders-controls .btn-secondary { width: 100%; }
-  .active-order-summary { grid-template-columns: 1fr auto; gap: 12px; }
-  .active-order-customer { grid-column: 1 / -1; grid-row: 2; }
-  .active-order-total { grid-column: 2; grid-row: 1; }
-  .active-order-id { grid-column: 1; grid-row: 1; }
-  .active-order-status { grid-column: 1 / -1; grid-row: 3; }
-  .active-order-actions .btn-sm { flex: 1 1 calc(50% - 4px); justify-content: center; }
-  .active-order-void { margin-left: 0; }
+  .active-orders-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .active-orders-controls label {
+    width: 100%;
+  }
+
+  .active-orders-controls .btn-secondary {
+    width: 100%;
+  }
+
+  .active-order-summary {
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+
+  .active-order-customer {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .active-order-total {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .active-order-id {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .active-order-status {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .active-order-actions .btn-sm {
+    flex: 1 1 calc(50% - 4px);
+    justify-content: center;
+  }
+
+  .active-order-void {
+    margin-left: 0;
+  }
 }
 
 /* ─── Variants & Add-ons Workspace ───────────────────────────────────────── */
@@ -1673,8 +1800,8 @@ body {
   text-align: center;
 }
 
-.variants-row > input,
-.modifier-create-form > input {
+.variants-row>input,
+.modifier-create-form>input {
   min-width: 0;
   height: 42px;
   padding: 0 11px;
@@ -1685,8 +1812,8 @@ body {
   font: inherit;
 }
 
-.variants-row > input:focus,
-.modifier-create-form > input:focus,
+.variants-row>input:focus,
+.modifier-create-form>input:focus,
 .variants-price-input:focus-within {
   outline: none;
   border-color: var(--bordo);
@@ -1884,6 +2011,7 @@ body {
 }
 
 @media (max-width: 900px) {
+
   .variants-item-picker,
   .variants-save-bar {
     align-items: stretch;
@@ -2098,6 +2226,397 @@ body {
 .staff-table tr:hover,
 .data-table tr:hover {
   background: var(--cream-bg);
+}
+
+/* ─── Staff Card Grid ──────────────────────────────────────────────────────── */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.staff-card {
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.staff-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--bordo-border);
+}
+
+.staff-card.row-inactive {
+  opacity: 0.6;
+}
+
+.staff-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.staff-avatar-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.staff-card-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.staff-card-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staff-card-username {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.staff-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-light);
+}
+
+.staff-card-actions .btn-secondary,
+.staff-card-actions .btn-warning,
+.staff-card-actions .btn-success {
+  flex: 1;
+  justify-content: center;
+}
+
+.staff-card-actions .btn-danger {
+  flex-shrink: 0;
+}
+
+.staff-search-field {
+  position: relative;
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.staff-search-field .staff-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.staff-search-field input {
+  width: 100%;
+  padding: 12px 14px 12px 44px;
+  border-radius: 14px;
+  border: 1.5px solid var(--card-border);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.18s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.staff-search-field input:focus {
+  border-color: var(--bordo);
+  box-shadow: 0 0 0 3px rgba(108, 21, 30, 0.1);
+}
+
+.staff-search-field input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ─── Inventory Card Grid ──────────────────────────────────────────────────── */
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 14px;
+}
+
+.inventory-card {
+  border: 1.5px solid var(--card-border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.inventory-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  border-color: var(--bordo-border);
+}
+
+.inventory-card.low-stock {
+  border-color: rgba(217, 119, 6, 0.4);
+  background: rgba(217, 119, 6, 0.03);
+}
+
+.inventory-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.inventory-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.inventory-stock-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.inventory-stock-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.inventory-stock-unit {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stock-bar-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--cream-bg);
+  overflow: hidden;
+}
+
+.stock-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.25s ease;
+}
+
+.inventory-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.inventory-card-meta strong {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.inventory-quick-adjust {
+  display: flex;
+  gap: 6px;
+}
+
+.inventory-quick-adjust button {
+  flex: 1;
+}
+
+.inventory-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.inventory-card-actions .btn-secondary {
+  flex: 1;
+  justify-content: center;
+}
+
+.inventory-card-actions .btn-danger {
+  flex-shrink: 0;
+}
+
+/* ─── Table Selector Grid (Take Order screen) ──────────────────────────────── */
+.table-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.table-select-card {
+  position: relative;
+  padding: 12px 10px;
+  text-align: center;
+  border-radius: 14px;
+  border: 1.5px solid var(--border-light);
+  background: var(--card-bg);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.table-select-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+.table-select-card.is-selected {
+  border-color: var(--bordo);
+  background: rgba(108, 21, 30, 0.05);
+  box-shadow: 0 0 0 3px rgba(108, 21, 30, 0.1);
+}
+
+.table-select-card.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.table-select-card.is-disabled:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.table-select-number {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.table-select-card.is-selected .table-select-number {
+  color: var(--bordo);
+}
+
+.table-select-capacity {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.table-select-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bordo);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-status-chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.table-status-chip.status-free {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.table-status-chip.status-free .dot {
+  background: var(--green);
+}
+
+.table-status-chip.status-occupied {
+  background: rgba(192, 57, 43, 0.1);
+  color: #C0392B;
+}
+
+.table-status-chip.status-occupied .dot {
+  background: #C0392B;
+}
+
+.table-status-chip.status-reserved {
+  background: rgba(217, 119, 6, 0.12);
+  color: #B45309;
+}
+
+.table-status-chip.status-reserved .dot {
+  background: #D97706;
+}
+
+.table-status-chip.status-needs_cleaning {
+  background: #EEF2F6;
+  color: #3B5166;
+}
+
+.table-status-chip.status-needs_cleaning .dot {
+  background: #3B5166;
+}
+
+@media (max-width: 480px) {
+  .table-select-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  }
 }
 
 /* ─── Modals & Dialogs ─────────────────────────────────────────────────────── */
@@ -2393,6 +2912,7 @@ body {
 
 /* ─── Responsive: Tablet (641px – 1024px) ────────────────────────────────── */
 @media (min-width: 641px) and (max-width: 1024px) {
+
   /* Icon-only sidebar */
   .app-sidebar {
     width: 72px;
@@ -2476,6 +2996,14 @@ body {
   /* Stats */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .staff-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-grid {
+    grid-template-columns: 1fr;
   }
 
   /* Menu catalog */
@@ -2564,13 +3092,15 @@ body {
     padding: 8px 10px;
     min-width: 38px;
     gap: 0;
-    font-size: 0; /* hide text, keep icon */
+    font-size: 0;
+    /* hide text, keep icon */
   }
 
   /* Content */
   .app-content {
     padding: 12px 16px;
-    padding-bottom: 88px; /* clear bottom nav */
+    padding-bottom: 88px;
+    /* clear bottom nav */
   }
 
   /* ── Bottom Navigation Bar ── */
@@ -2675,7 +3205,7 @@ body {
   }
 
   /* Hide cart panel on mobile — it slides up via sheet */
-  .pos-order-layout > .pos-cart-panel {
+  .pos-order-layout>.pos-cart-panel {
     display: none;
   }
 
@@ -2830,8 +3360,8 @@ body {
   }
 
   /* Keep icon visible, hide text node — use font-size trick */
-  .header-actions .btn-secondary > *:not(svg):not([class*="Icon"]),
-  .header-actions .btn-danger > *:not(svg):not([class*="Icon"]) {
+  .header-actions .btn-secondary>*:not(svg):not([class*="Icon"]),
+  .header-actions .btn-danger>*:not(svg):not([class*="Icon"]) {
     display: none;
   }
 
@@ -2886,3 +3416,411 @@ body {
     border-radius: 12px;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   HIGH-CONTRAST MULTI-COLOR RESTAURANT POS DESIGN SYSTEM
+   Deliberate vibrant multi-palette ensuring each module, order state, channel,
+   and action button stands out with rich restaurant personality.
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Vibrant Multi-Color Department Navigation ─────────────────────────── */
+
+/* Cashier POS / Kitchen Queue — Emerald Green */
+.sidebar-nav-item.tab-cashier_pos .sidebar-nav-icon {
+  color: #059669;
+}
+.sidebar-nav-item.tab-cashier_pos:hover {
+  background: #ECFDF5;
+  color: #047857;
+  border-color: #A7F3D0;
+}
+.sidebar-nav-item.tab-cashier_pos.active {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35) !important;
+}
+.sidebar-nav-item.tab-cashier_pos.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-cashier_pos.active::before {
+  background: #6EE7B7 !important;
+}
+
+/* Tables Floor Plan — Golden Amber */
+.sidebar-nav-item.tab-tables .sidebar-nav-icon {
+  color: #D97706;
+}
+.sidebar-nav-item.tab-tables:hover {
+  background: #FFFBEB;
+  color: #B45309;
+  border-color: #FDE68A;
+}
+.sidebar-nav-item.tab-tables.active {
+  background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #B45309 !important;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.35) !important;
+}
+.sidebar-nav-item.tab-tables.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-tables.active::before {
+  background: #FDE68A !important;
+}
+
+/* Menu Catalog — Fiery Chef Coral / Red */
+.sidebar-nav-item.tab-menu .sidebar-nav-icon {
+  color: #E11D48;
+}
+.sidebar-nav-item.tab-menu:hover {
+  background: #FFF1F2;
+  color: #BE123C;
+  border-color: #FECDD3;
+}
+.sidebar-nav-item.tab-menu.active {
+  background: linear-gradient(135deg, #E11D48 0%, #F43F5E 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #BE123C !important;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35) !important;
+}
+.sidebar-nav-item.tab-menu.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-menu.active::before {
+  background: #FECDD3 !important;
+}
+
+/* Inventory & Stock — Caribbean Cyan */
+.sidebar-nav-item.tab-inventory .sidebar-nav-icon {
+  color: #0891B2;
+}
+.sidebar-nav-item.tab-inventory:hover {
+  background: #ECFEFF;
+  color: #0E7490;
+  border-color: #A5F3FC;
+}
+.sidebar-nav-item.tab-inventory.active {
+  background: linear-gradient(135deg, #0891B2 0%, #06B6D4 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #0E7490 !important;
+  box-shadow: 0 4px 16px rgba(8, 145, 178, 0.35) !important;
+}
+.sidebar-nav-item.tab-inventory.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-inventory.active::before {
+  background: #A5F3FC !important;
+}
+
+/* Staff & User Management — Royal Indigo */
+.sidebar-nav-item.tab-users .sidebar-nav-icon {
+  color: #4F46E5;
+}
+.sidebar-nav-item.tab-users:hover {
+  background: #EEF2FF;
+  color: #4338CA;
+  border-color: #C7D2FE;
+}
+.sidebar-nav-item.tab-users.active {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #4338CA !important;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35) !important;
+}
+.sidebar-nav-item.tab-users.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-users.active::before {
+  background: #C7D2FE !important;
+}
+
+/* Total Orders / Analytics — Vivid Purple */
+.sidebar-nav-item.tab-reports .sidebar-nav-icon {
+  color: #7C3AED;
+}
+.sidebar-nav-item.tab-reports:hover {
+  background: #F5F3FF;
+  color: #6D28D9;
+  border-color: #DDD6FE;
+}
+.sidebar-nav-item.tab-reports.active {
+  background: linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #6D28D9 !important;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35) !important;
+}
+.sidebar-nav-item.tab-reports.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-reports.active::before {
+  background: #DDD6FE !important;
+}
+
+/* Activity Log / Audit — Hot Pink / Rose */
+.sidebar-nav-item.tab-audit .sidebar-nav-icon {
+  color: #DB2777;
+}
+.sidebar-nav-item.tab-audit:hover {
+  background: #FDF2F8;
+  color: #BE185D;
+  border-color: #FBCFE8;
+}
+.sidebar-nav-item.tab-audit.active {
+  background: linear-gradient(135deg, #DB2777 0%, #EC4899 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #BE185D !important;
+  box-shadow: 0 4px 16px rgba(219, 39, 119, 0.35) !important;
+}
+.sidebar-nav-item.tab-audit.active .sidebar-nav-icon {
+  color: #FFFFFF !important;
+}
+.sidebar-nav-item.tab-audit.active::before {
+  background: #FBCFE8 !important;
+}
+
+/* Mobile Nav Multi-Color Highlighting */
+.mobile-nav-item.tab-cashier_pos.active { color: #059669; }
+.mobile-nav-item.tab-tables.active { color: #D97706; }
+.mobile-nav-item.tab-menu.active { color: #E11D48; }
+.mobile-nav-item.tab-inventory.active { color: #0891B2; }
+.mobile-nav-item.tab-users.active { color: #4F46E5; }
+.mobile-nav-item.tab-reports.active { color: #7C3AED; }
+.mobile-nav-item.tab-audit.active { color: #DB2777; }
+
+/* ─── 2. Order Channel Action Buttons ───────────────────────────────────────── */
+.channel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 1.5px solid transparent;
+}
+
+.channel-btn:hover {
+  transform: translateY(-2px);
+}
+
+.channel-btn-dine-in {
+  background: #FFFFFF;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+.channel-btn-dine-in:hover {
+  background: #ECFDF5;
+  border-color: #059669;
+}
+.channel-btn-dine-in.active {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35) !important;
+}
+
+.channel-btn-takeaway {
+  background: #FFFFFF;
+  color: #9A3412;
+  border-color: #FDBA74;
+}
+.channel-btn-takeaway:hover {
+  background: #FFF7ED;
+  border-color: #EA580C;
+}
+.channel-btn-takeaway.active {
+  background: linear-gradient(135deg, #EA580C 0%, #F97316 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #C2410C !important;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35) !important;
+}
+
+.channel-btn-delivery {
+  background: #FFFFFF;
+  color: #1E40AF;
+  border-color: #93C5FD;
+}
+.channel-btn-delivery:hover {
+  background: #EFF6FF;
+  border-color: #2563EB;
+}
+.channel-btn-delivery.active {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #1D4ED8 !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+}
+
+/* ─── 3. Multi-Color Category Filter Pills ─────────────────────────────────── */
+.category-tab {
+  transition: all 0.18s ease;
+  font-weight: 600;
+}
+.category-tab:hover {
+  transform: translateY(-1px);
+}
+.category-tab-all.active {
+  background: #0F172A !important;
+  color: #FFFFFF !important;
+  border-color: #0F172A !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3) !important;
+}
+.cat-color-0.active {
+  background: linear-gradient(135deg, #E11D48, #F43F5E) !important;
+  color: #FFFFFF !important;
+  border-color: #BE123C !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.35) !important;
+}
+.cat-color-1.active {
+  background: linear-gradient(135deg, #0891B2, #06B6D4) !important;
+  color: #FFFFFF !important;
+  border-color: #0E7490 !important;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.35) !important;
+}
+.cat-color-2.active {
+  background: linear-gradient(135deg, #D97706, #F59E0B) !important;
+  color: #FFFFFF !important;
+  border-color: #B45309 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35) !important;
+}
+.cat-color-3.active {
+  background: linear-gradient(135deg, #DB2777, #EC4899) !important;
+  color: #FFFFFF !important;
+  border-color: #BE185D !important;
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.35) !important;
+}
+.cat-color-4.active {
+  background: linear-gradient(135deg, #7C3AED, #8B5CF6) !important;
+  color: #FFFFFF !important;
+  border-color: #6D28D9 !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35) !important;
+}
+.cat-color-5.active {
+  background: linear-gradient(135deg, #EA580C, #F97316) !important;
+  color: #FFFFFF !important;
+  border-color: #C2410C !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35) !important;
+}
+.cat-color-6.active {
+  background: linear-gradient(135deg, #059669, #10B981) !important;
+  color: #FFFFFF !important;
+  border-color: #047857 !important;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35) !important;
+}
+.cat-color-7.active {
+  background: linear-gradient(135deg, #4F46E5, #6366F1) !important;
+  color: #FFFFFF !important;
+  border-color: #4338CA !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35) !important;
+}
+
+/* ─── 4. High-Contrast Action Buttons (POS Register) ────────────────────────── */
+.btn-pay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  border: 1px solid #047857;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+  transition: all 0.18s ease;
+}
+.btn-pay:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+}
+
+.btn-kitchen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
+  color: #FFFFFF;
+  border: 1px solid #C2410C;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  transition: all 0.18s ease;
+}
+.btn-kitchen:hover:not(:disabled) {
+  background: #C2410C;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45);
+}
+
+.btn-receipt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #FFFFFF;
+  color: #0E7490;
+  border: 1.5px solid #67E8F9;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.btn-receipt:hover:not(:disabled) {
+  background: #ECFEFF;
+  border-color: #0891B2;
+}
+
+/* ─── 5. Item Cards & Price Tags ───────────────────────────────────────────── */
+.item-price-tag {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: #047857 !important;
+  background: #ECFDF5 !important;
+  padding: 3px 9px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid #A7F3D0 !important;
+}
+
+/* ─── 6. High-Contrast User Role Badges ─────────────────────────────────────── */
+.role-ADMIN {
+  background: #F3E8FF !important;
+  color: #7C3AED !important;
+  border: 1.5px solid #DDD6FE !important;
+  font-weight: 800 !important;
+}
+.role-MANAGER {
+  background: #EFF6FF !important;
+  color: #2563EB !important;
+  border: 1.5px solid #BFDBFE !important;
+  font-weight: 800 !important;
+}
+.role-CASHIER {
+  background: #ECFDF5 !important;
+  color: #059669 !important;
+  border: 1.5px solid #A7F3D0 !important;
+  font-weight: 800 !important;
+}
+.role-WAITER {
+  background: #FFFBEB !important;
+  color: #D97706 !important;
+  border: 1.5px solid #FDE68A !important;
+  font-weight: 800 !important;
+}
+.role-KITCHEN_STAFF {
+  background: #FFF1F2 !important;
+  color: #E11D48 !important;
+  border: 1.5px solid #FECDD3 !important;
+  font-weight: 800 !important;
+}

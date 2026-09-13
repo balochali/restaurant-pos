@@ -249,16 +249,14 @@ export default function InventoryManagement() {
       {/* Controls: Search, Categories, Low-stock toggle, Add button */}
       <div style={{ background: "var(--surface-warm)", padding: "16px", borderRadius: "14px", border: "1px solid var(--border-light)", marginBottom: "16px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "12px" }}>
-          <div style={{ position: "relative", flex: 1, minWidth: "260px" }}>
-            <div style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }}>
-              <IconSearch size={16} />
-            </div>
+          <div className="staff-search-field" style={{ flex: 1, minWidth: "260px" }}>
+            <IconSearch size={18} className="staff-search-icon" />
             <input
               type="text"
               placeholder="Search ingredient or item..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: "100%", paddingLeft: "36px" }}
+              aria-label="Search inventory"
             />
           </div>
 
@@ -316,148 +314,122 @@ export default function InventoryManagement() {
         </div>
       </div>
 
-      {/* Inventory Items Table */}
-      <div className="table-responsive" style={{ border: "1px solid var(--border-light)", borderRadius: "14px", overflow: "hidden" }}>
-        {loading ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
-            <IconInventory size={32} color="var(--primary)" />
-            <p style={{ marginTop: "8px" }}>Loading inventory data...</p>
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)" }}>
-            <IconInventory size={40} color="var(--text-muted)" />
-            <h4 style={{ marginTop: "12px" }}>No Inventory Items Found</h4>
-            <p style={{ fontSize: "13px", marginTop: "4px" }}>
-              {searchQuery || selectedCategory !== "ALL" || onlyLowStock
-                ? "Try adjusting your search query or category filters."
-                : 'Click "+ Add Inventory Item" to start tracking restaurant stock.'}
-            </p>
-          </div>
-        ) : (
-          <table className="staff-table" style={{ width: "100%", margin: 0 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left" }}>Item Name</th>
-                <th style={{ textAlign: "left" }}>Category</th>
-                <th style={{ textAlign: "center" }}>Unit</th>
-                <th style={{ textAlign: "center" }}>Current Stock</th>
-                <th style={{ textAlign: "center" }}>Min Alert</th>
-                <th style={{ textAlign: "right" }}>Cost / Unit</th>
-                <th style={{ textAlign: "center" }}>Quick Stock Adjust</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((item) => {
-                const isLow = item.current_stock <= item.min_threshold;
-                return (
-                  <tr
-                    key={item.id}
-                    style={{
-                      background: isLow ? "rgba(217, 119, 6, 0.06)" : "inherit",
-                    }}
-                  >
-                    <td style={{ fontWeight: "700" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span>{item.name}</span>
-                        {isLow && (
-                          <span
-                            className="status-badge"
-                            style={{
-                              fontSize: "10px",
-                              background: "rgba(217, 119, 6, 0.15)",
-                              color: "#B45309",
-                              border: "1px solid rgba(217, 119, 6, 0.3)",
-                            }}
-                          >
-                            LOW STOCK
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="role-pill" style={{ background: "var(--cream)", color: "var(--primary)", fontWeight: "600" }}>
-                        {item.category}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center", color: "var(--text-muted)" }}>
-                      {item.unit}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
+      {/* Inventory Items Grid */}
+      {loading ? (
+        <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+          <IconInventory size={32} color="var(--primary)" />
+          <p style={{ marginTop: "8px" }}>Loading inventory data...</p>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div style={{ padding: "48px", textAlign: "center", color: "var(--text-muted)", border: "1px solid var(--border-light)", borderRadius: "14px" }}>
+          <IconInventory size={40} color="var(--text-muted)" />
+          <h4 style={{ marginTop: "12px" }}>No Inventory Items Found</h4>
+          <p style={{ fontSize: "13px", marginTop: "4px" }}>
+            {searchQuery || selectedCategory !== "ALL" || onlyLowStock
+              ? "Try adjusting your search query or category filters."
+              : 'Click "+ Add Inventory Item" to start tracking restaurant stock.'}
+          </p>
+        </div>
+      ) : (
+        <div className="inventory-grid">
+          {filteredItems.map((item) => {
+            const isLow = item.current_stock <= item.min_threshold;
+            // Visual-only ceiling so the bar has a sense of "healthy stock" to
+            // fill toward — it's not a real max-stock field in the schema.
+            const barCeiling = Math.max(item.min_threshold * 3, item.min_threshold + 1, 1);
+            const barPercent = Math.min(100, Math.round((item.current_stock / barCeiling) * 100));
+            const barColor = isLow ? "#D97706" : "var(--secondary)";
+
+            return (
+              <div key={item.id} className={`inventory-card ${isLow ? "low-stock" : ""}`}>
+                <div className="inventory-card-top">
+                  <div className="inventory-card-name">
+                    {item.name}
+                    {isLow && (
                       <span
+                        className="status-badge"
                         style={{
-                          fontSize: "15px",
-                          fontWeight: "800",
-                          color: isLow ? "#B45309" : "var(--secondary)",
+                          fontSize: "10px",
+                          background: "rgba(217, 119, 6, 0.15)",
+                          color: "#B45309",
+                          border: "1px solid rgba(217, 119, 6, 0.3)",
                         }}
                       >
-                        {item.current_stock}
+                        LOW STOCK
                       </span>
-                    </td>
-                    <td style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
-                      {item.min_threshold} {item.unit}
-                    </td>
-                    <td style={{ textAlign: "right", fontWeight: "600" }}>
-                      {formatCurrency(Number(item.cost_per_unit || 0))}
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <div style={{ display: "inline-flex", gap: "4px" }}>
-                        <button
-                          type="button"
-                          className="btn-secondary btn-sm"
-                          style={{ padding: "4px 8px", fontSize: "12px" }}
-                          onClick={() => handleQuickAdjust(item.id, -1, item.name)}
-                          title="Deduct 1"
-                        >
-                          -1
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-secondary btn-sm"
-                          style={{ padding: "4px 8px", fontSize: "12px" }}
-                          onClick={() => handleQuickAdjust(item.id, 1, item.name)}
-                          title="Add 1"
-                        >
-                          +1
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-secondary btn-sm"
-                          style={{ padding: "4px 8px", fontSize: "12px" }}
-                          onClick={() => handleQuickAdjust(item.id, 5, item.name)}
-                          title="Add 5"
-                        >
-                          +5
-                        </button>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <div className="action-buttons" style={{ justifyContent: "flex-end" }}>
-                        <button
-                          type="button"
-                          className="btn-secondary btn-sm"
-                          onClick={() => openEditModal(item)}
-                          title="Edit Item"
-                        >
-                          <IconEdit size={13} /> Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-danger btn-sm"
-                          onClick={() => handleDelete(item.id, item.name)}
-                          title="Delete Item"
-                        >
-                          <IconTrash size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+                    )}
+                  </div>
+                  <span className="role-pill" style={{ background: "var(--cream)", color: "var(--primary)", fontWeight: "600", flexShrink: 0 }}>
+                    {item.category}
+                  </span>
+                </div>
+
+                <div>
+                  <div className="inventory-stock-row">
+                    <span className="inventory-stock-value" style={{ color: isLow ? "#B45309" : "var(--secondary)" }}>
+                      {item.current_stock}
+                    </span>
+                    <span className="inventory-stock-unit">{item.unit} in stock</span>
+                  </div>
+                  <div className="stock-bar-track" style={{ marginTop: "8px" }}>
+                    <div className="stock-bar-fill" style={{ width: `${barPercent}%`, background: barColor }} />
+                  </div>
+                </div>
+
+                <div className="inventory-card-meta">
+                  <span>
+                    Min alert: <strong>{item.min_threshold} {item.unit}</strong>
+                  </span>
+                  <span>
+                    Cost/unit: <strong>{formatCurrency(Number(item.cost_per_unit || 0))}</strong>
+                  </span>
+                </div>
+
+                <div className="inventory-quick-adjust">
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => handleQuickAdjust(item.id, -1, item.name)}
+                    title="Deduct 1"
+                  >
+                    -1
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => handleQuickAdjust(item.id, 1, item.name)}
+                    title="Add 1"
+                  >
+                    +1
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => handleQuickAdjust(item.id, 5, item.name)}
+                    title="Add 5"
+                  >
+                    +5
+                  </button>
+                </div>
+
+                <div className="inventory-card-actions">
+                  <button type="button" className="btn-secondary btn-sm" onClick={() => openEditModal(item)} title="Edit Item">
+                    <IconEdit size={13} /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-danger btn-sm"
+                    onClick={() => handleDelete(item.id, item.name)}
+                    title="Delete Item"
+                  >
+                    <IconTrash size={13} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add / Edit Inventory Modal */}
       {isModalOpen && (

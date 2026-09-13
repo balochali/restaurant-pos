@@ -35,6 +35,7 @@ export interface DbOrder {
   customer_address: string | null;
   status: OrderStatus;
   notes: string | null;
+  payment_method?: "CASH" | "CARD" | "DIGITAL" | "OTHER" | null;
   subtotal: number;
   discount: number;
   tax: number;
@@ -169,6 +170,30 @@ export async function getAllOrders(limit = 50): Promise<DbOrder[]> {
   );
 }
 
+// ─── Sales Reporting ────────────────────────────────────────────────────────
+
+/**
+ * Returns completed (paid & closed) orders, most recent first, with the
+ * payment method used. Used by the Total Orders / sales report screen to
+ * compute daily, weekly, and monthly totals.
+ */
+export async function getClosedOrders(limit = 1000): Promise<DbOrder[]> {
+  const db = await getDb();
+  return db.select<DbOrder[]>(
+    `SELECT o.*, t.number as table_number, u.name as created_by_name,
+            (SELECT p.method FROM payments p
+              WHERE p.order_id = o.id AND p.status = 'COMPLETED'
+              ORDER BY p.created_at DESC LIMIT 1) as payment_method
+     FROM orders o
+     LEFT JOIN tables t ON t.id = o.table_id
+     LEFT JOIN users  u ON u.id = o.created_by_id
+     WHERE o.status = 'CLOSED'
+     ORDER BY o.created_locally_at DESC
+     LIMIT ?`,
+    [limit]
+  );
+}
+
 export async function getOrderItems(orderId: string): Promise<DbOrderItem[]> {
   const db = await getDb();
   return db.select<DbOrderItem[]>(
@@ -180,6 +205,74 @@ export async function getOrderItems(orderId: string): Promise<DbOrderItem[]> {
      ORDER BY oi.rowid ASC`,
     [orderId]
   );
+}
+
+export interface TopSellingItem {
+  itemId: string;
+  itemName: string;
+  categoryName: string;
+  totalQty: number;
+  totalRevenue: number;
+}
+
+export interface CategorySalesSummary {
+  categoryName: string;
+  totalQty: number;
+  totalRevenue: number;
+}
+
+export async function getTopSellingItems(limit = 8, cutoffDateIso?: string): Promise<TopSellingItem[]> {
+  const db = await getDb();
+  let query = `
+    SELECT 
+      oi.menu_item_id as itemId,
+      COALESCE(mi.name, oi.notes, 'Special Item') as itemName,
+      COALESCE(mc.name, 'General') as categoryName,
+      SUM(oi.quantity) as totalQty,
+      SUM(oi.quantity * oi.unit_price) as totalRevenue
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
+    LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+    WHERE o.status = 'CLOSED' AND oi.status != 'VOIDED'
+  `;
+  const params: (string | number)[] = [];
+  if (cutoffDateIso) {
+    query += ` AND o.created_locally_at >= ?`;
+    params.push(cutoffDateIso);
+  }
+  query += `
+    GROUP BY oi.menu_item_id, itemName, categoryName
+    ORDER BY totalQty DESC, totalRevenue DESC
+    LIMIT ?
+  `;
+  params.push(limit);
+  return db.select<TopSellingItem[]>(query, params);
+}
+
+export async function getCategorySales(cutoffDateIso?: string): Promise<CategorySalesSummary[]> {
+  const db = await getDb();
+  let query = `
+    SELECT 
+      COALESCE(mc.name, 'General') as categoryName,
+      SUM(oi.quantity) as totalQty,
+      SUM(oi.quantity * oi.unit_price) as totalRevenue
+    FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id
+    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
+    LEFT JOIN menu_categories mc ON mc.id = mi.category_id
+    WHERE o.status = 'CLOSED' AND oi.status != 'VOIDED'
+  `;
+  const params: string[] = [];
+  if (cutoffDateIso) {
+    query += ` AND o.created_locally_at >= ?`;
+    params.push(cutoffDateIso);
+  }
+  query += `
+    GROUP BY categoryName
+    ORDER BY totalRevenue DESC
+  `;
+  return db.select<CategorySalesSummary[]>(query, params);
 }
 
 // ─── T-030: Cart / Line Item Builder ─────────────────────────────────────────

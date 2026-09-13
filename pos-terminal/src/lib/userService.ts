@@ -153,7 +153,17 @@ export async function deleteStaffUser(id: string, performedByUserId: string): Pr
   const users = await db.select<DbUser[]>("SELECT name, role FROM users WHERE id = ?", [id]);
   const userName = users[0]?.name || id;
 
-  await db.execute("DELETE FROM users WHERE id = ?", [id]);
+  try {
+    await db.execute("DELETE FROM users WHERE id = ?", [id]);
+  } catch (err) {
+    const message = String(err);
+    if (message.includes("FOREIGN KEY constraint failed")) {
+      throw new Error(
+        `"${userName}" has orders or activity on record, so deleting them would break those historical records. Deactivate their account instead — that removes their login access but keeps your order history and reports intact.`
+      );
+    }
+    throw err;
+  }
 
   await logAuditEvent({
     userId: performedByUserId,

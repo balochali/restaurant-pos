@@ -36,6 +36,7 @@ import {
   isItemInTimeWindow,
 } from "../lib/menuService";
 import { useAuth } from "../store/useAuth";
+import { can } from "../lib/permissions";
 import ReceiptModal from "./ReceiptModal";
 import { ReceiptData } from "../lib/receiptService";
 import {
@@ -70,9 +71,15 @@ interface OrderManagementProps {
 
 export default function OrderManagement({ initialTableId, onSwitchToTables }: OrderManagementProps = {}) {
   const { user: currentUser } = useAuth();
+  const canCreateOrder = can(currentUser?.role, "create_order");
+  const canProcessPayment = can(currentUser?.role, "process_payment");
+  const canVoidOrder = can(currentUser?.role, "void_order");
 
-  // Navigation Subtabs
-  const [activeSubtab, setActiveSubtab] = useState<"new_order" | "active_orders" | "table_operations">("new_order");
+  // Navigation Subtabs — kitchen-only staff (no create_order permission) land
+  // straight on Active Orders since they have no use for the order builder.
+  const [activeSubtab, setActiveSubtab] = useState<"new_order" | "active_orders" | "table_operations">(
+    canCreateOrder ? "new_order" : "active_orders"
+  );
 
   // Notifications
   const [error, setError] = useState<string | null>(null);
@@ -218,9 +225,9 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
         (c) => c.menuItem.id === item.id && !c.selectedVariant && c.selectedModifiers.length === 0 && !c.notes
       );
       if (existingIdx >= 0) {
-        const updated = [...prev];
-        updated[existingIdx].quantity += 1;
-        return updated;
+        return prev.map((c, i) =>
+          i === existingIdx ? { ...c, quantity: c.quantity + 1 } : c
+        );
       }
       return [
         ...prev,
@@ -267,13 +274,11 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
 
   const updateCartItemQty = (index: number, delta: number) => {
     setCart((prev) => {
-      const updated = [...prev];
-      const newQty = updated[index].quantity + delta;
+      const newQty = prev[index].quantity + delta;
       if (newQty <= 0) {
-        return updated.filter((_, i) => i !== index);
+        return prev.filter((_, i) => i !== index);
       }
-      updated[index].quantity = newQty;
-      return updated;
+      return prev.map((c, i) => (i === index ? { ...c, quantity: newQty } : c));
     });
   };
 
@@ -308,6 +313,17 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
     if (orderSource === "DINE_IN" && !selectedTableId) {
       setError("Please select a table for Dine-In orders.");
       return;
+    }
+
+    if (orderSource === "DINE_IN" && selectedTableId) {
+      const chosenTable = tables.find((t) => t.id === selectedTableId);
+      if (chosenTable && chosenTable.status !== "FREE") {
+        setError(
+          `Table ${chosenTable.number} is no longer free (${chosenTable.status.replace("_", " ").toLowerCase()}) — it may have just been claimed. Please pick another table.`
+        );
+        setSelectedTableId("");
+        return;
+      }
     }
 
     try {
@@ -632,8 +648,12 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
     <div className="card full-width-card">
       <div className="card-header-row">
         <div>
-          <h4>Order Management System</h4>
-          <p className="subtitle">Create takeaway orders, send them to the kitchen, and complete payment.</p>
+          <h4>{canCreateOrder ? "Order Management System" : "Kitchen Order Queue"}</h4>
+          <p className="subtitle">
+            {canCreateOrder
+              ? "Create takeaway orders, send them to the kitchen, and complete payment."
+              : "View incoming orders and update their status as you prepare them."}
+          </p>
         </div>
       </div>
 
@@ -650,13 +670,15 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
 
       {/* Subtabs Navigation */}
       <div className="sub-nav-tabs">
-        <button
-          type="button"
-          className={`sub-nav-tab ${activeSubtab === "new_order" ? "active" : ""}`}
-          onClick={() => setActiveSubtab("new_order")}
-        >
-          <IconPlus size={16} /> Take Order
-        </button>
+        {canCreateOrder && (
+          <button
+            type="button"
+            className={`sub-nav-tab ${activeSubtab === "new_order" ? "active" : ""}`}
+            onClick={() => setActiveSubtab("new_order")}
+          >
+            <IconPlus size={16} /> Take Order
+          </button>
+        )}
         <button
           type="button"
           className={`sub-nav-tab ${activeSubtab === "active_orders" ? "active" : ""}`}
@@ -669,478 +691,477 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
       {/* ─────────────────────────────────────────────────────────────────────── */}
       {/* SUBTAB 1: NEW ORDER & CART BUILDER (T-029, T-030, T-031, T-032)         */}
       {/* ─────────────────────────────────────────────────────────────────────── */}
-      {activeSubtab === "new_order" && (
+      {activeSubtab === "new_order" && canCreateOrder && (
         <>
           <div className="pos-order-layout">
-          {/* LEFT: Order Type + Table Selection + Menu Browser */}
-          <div>
-            {/* Step 1: Order Type Selector */}
-            <div className="sub-card" style={{ marginBottom: "16px" }}>
-              <h5 style={{ marginBottom: "12px" }}>1. Select Order Type</h5>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className={`btn-secondary ${orderSource === "DINE_IN" ? "btn-primary" : ""}`}
-                  onClick={() => setOrderSource("DINE_IN")}
-                >
-                  🪑 Dine-In
-                </button>
-                <button
-                  type="button"
-                  className={`btn-secondary ${orderSource === "TAKEAWAY" ? "btn-primary" : ""}`}
-                  onClick={() => setOrderSource("TAKEAWAY")}
-                >
-                  🥡 Takeaway
-                </button>
-                <button
-                  type="button"
-                  className={`btn-secondary ${orderSource === "DELIVERY" ? "btn-primary" : ""}`}
-                  onClick={() => setOrderSource("DELIVERY")}
-                >
-                  🛵 Delivery
-                </button>
-              </div>
-
-              {/* Dine-In Floor Plan */}
-              {orderSource === "DINE_IN" && (
-                <div style={{ marginTop: "14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                    <label style={{ fontSize: "13px", fontWeight: "600" }}>
-                      Select Table: {selectedTableId ? `Table ${tables.find((t) => t.id === selectedTableId)?.number}` : "None Selected"}
-                    </label>
-                    {onSwitchToTables && (
-                      <button
-                        type="button"
-                        className="btn-secondary btn-sm"
-                        style={{ fontSize: "11px", padding: "3px 8px" }}
-                        onClick={onSwitchToTables}
-                      >
-                        🗺️ View Full Floor Map
-                      </button>
-                    )}
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))", gap: "8px" }}>
-                    {tables.map((tbl) => {
-                      const isSelected = selectedTableId === tbl.id;
-                      const isFree = tbl.status === "FREE";
-                      return (
-                        <div
-                          key={tbl.id}
-                          onClick={() => setSelectedTableId(tbl.id)}
-                          style={{
-                            padding: "10px 8px",
-                            textAlign: "center",
-                            borderRadius: "12px",
-                            border: isSelected ? "2px solid var(--accent)" : "1.5px solid var(--border-light)",
-                            background: isSelected
-                              ? "var(--accent-light)"
-                              : isFree
-                              ? "#edfaf4"
-                              : "#fff1f0",
-                            cursor: "pointer",
-                            transition: "all 0.15s ease",
-                          }}
-                        >
-                          <div style={{ fontWeight: "800", fontSize: "15px", color: isSelected ? "var(--accent-dark)" : "var(--text-primary)" }}>
-                            {tbl.number}
-                          </div>
-                          <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
-                            👥 {tbl.capacity}p
-                          </div>
-                          <div style={{ fontSize: "10px", fontWeight: "700", marginTop: "4px", color: isFree ? "#1a7a4a" : "#c0392b" }}>
-                            {tbl.status}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+            {/* LEFT: Order Type + Table Selection + Menu Browser */}
+            <div>
+              {/* Step 1: Order Type Selector */}
+              <div className="sub-card" style={{ marginBottom: "16px" }}>
+                <h5 style={{ marginBottom: "12px" }}>1. Select Order Type</h5>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className={`channel-btn channel-btn-dine-in ${orderSource === "DINE_IN" ? "active" : ""}`}
+                    onClick={() => setOrderSource("DINE_IN")}
+                  >
+                    🍽️ Dine-In
+                  </button>
+                  <button
+                    type="button"
+                    className={`channel-btn channel-btn-takeaway ${orderSource === "TAKEAWAY" ? "active" : ""}`}
+                    onClick={() => setOrderSource("TAKEAWAY")}
+                  >
+                    🛍️ Takeaway
+                  </button>
+                  <button
+                    type="button"
+                    className={`channel-btn channel-btn-delivery ${orderSource === "DELIVERY" ? "active" : ""}`}
+                    onClick={() => setOrderSource("DELIVERY")}
+                  >
+                    🛵 Delivery
+                  </button>
                 </div>
-              )}
 
-              {/* Takeaway / Delivery Customer Info */}
-              {(orderSource === "TAKEAWAY" || orderSource === "DELIVERY") && (
-                <div className="order-customer-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "14px" }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label>Customer Name</label>
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="e.g. Alex Smith"
-                    />
+                {/* Dine-In Floor Plan */}
+                {orderSource === "DINE_IN" && (
+                  <div style={{ marginTop: "14px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                      <label style={{ fontSize: "13px", fontWeight: "600" }}>
+                        Select Table: {selectedTableId ? `Table ${tables.find((t) => t.id === selectedTableId)?.number}` : "None Selected"}
+                      </label>
+                      {onSwitchToTables && (
+                        <button
+                          type="button"
+                          className="btn-secondary btn-sm"
+                          style={{ fontSize: "11px", padding: "3px 8px" }}
+                          onClick={onSwitchToTables}
+                        >
+                          🗺️ View Full Floor Map
+                        </button>
+                      )}
+                    </div>
+                    <div className="table-select-grid">
+                      {tables.map((tbl) => {
+                        const isSelected = selectedTableId === tbl.id;
+                        const isFree = tbl.status === "FREE";
+                        return (
+                          <div
+                            key={tbl.id}
+                            className={`table-select-card ${isSelected ? "is-selected" : ""} ${!isFree ? "is-disabled" : ""}`}
+                            onClick={() => {
+                              if (!isFree) {
+                                setError(
+                                  `Table ${tbl.number} isn't available right now (${tbl.status.replace("_", " ").toLowerCase()}). Choose a free table, or clear/reset it from the Tables page first.`
+                                );
+                                return;
+                              }
+                              setSelectedTableId(tbl.id);
+                            }}
+                            title={isFree ? undefined : `Table ${tbl.number} is ${tbl.status.replace("_", " ").toLowerCase()}`}
+                          >
+                            {isSelected && (
+                              <span className="table-select-check">
+                                <IconCheck size={10} color="#FFFFFF" />
+                              </span>
+                            )}
+                            <span className="table-select-number">{tbl.number}</span>
+                            <span className="table-select-capacity">👥 {tbl.capacity}p</span>
+                            <span className={`table-status-chip status-${tbl.status.toLowerCase()}`}>
+                              <span className="dot" />
+                              {tbl.status.replace("_", " ")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label>Phone Number</label>
-                    <input
-                      type="text"
-                      value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="e.g. 555-0199"
-                    />
-                  </div>
-                  {orderSource === "DELIVERY" && (
-                    <div className="form-group" style={{ gridColumn: "1 / -1", margin: 0 }}>
-                      <label>Delivery Address</label>
+                )}
+
+                {/* Takeaway / Delivery Customer Info */}
+                {(orderSource === "TAKEAWAY" || orderSource === "DELIVERY") && (
+                  <div className="order-customer-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "14px" }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label>Customer Name</label>
                       <input
                         type="text"
-                        value={customerAddress}
-                        onChange={(e) => setCustomerAddress(e.target.value)}
-                        placeholder="e.g. 123 Main St, Apt 4B"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="e.g. Alex Smith"
                       />
                     </div>
-                  )}
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label>Phone Number</label>
+                      <input
+                        type="text"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        placeholder="e.g. 555-0199"
+                      />
+                    </div>
+                    {orderSource === "DELIVERY" && (
+                      <div className="form-group" style={{ gridColumn: "1 / -1", margin: 0 }}>
+                        <label>Delivery Address</label>
+                        <input
+                          type="text"
+                          value={customerAddress}
+                          onChange={(e) => setCustomerAddress(e.target.value)}
+                          placeholder="e.g. 123 Main St, Apt 4B"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2: Menu Browsing & Search */}
+              <div className="sub-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "14px" }}>
+                  <h5 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>2. Select Menu Items</h5>
+                  <div style={{ position: "relative", width: "220px" }}>
+                    <input
+                      type="text"
+                      value={menuSearchQuery}
+                      onChange={(e) => setMenuSearchQuery(e.target.value)}
+                      placeholder="Search menu..."
+                      style={{
+                        padding: "8px 12px 8px 34px",
+                        borderRadius: "12px",
+                        border: "1.5px solid var(--card-border)",
+                        fontSize: "13px",
+                        width: "100%",
+                        outline: "none",
+                      }}
+                    />
+                    <div style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
+                      <IconSearch size={16} />
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Category Filter Pills */}
+                <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "14px" }}>
+                  <button
+                    type="button"
+                    className={`sub-nav-tab category-tab-all ${selectedCategory === "ALL" ? "active" : ""}`}
+                    onClick={() => setSelectedCategory("ALL")}
+                  >
+                    <IconFilter size={14} />
+                    All Items ({menuItems.length})
+                  </button>
+                  {categories.map((cat, idx) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      className={`sub-nav-tab category-tab cat-color-${idx % 8} ${selectedCategory === cat.id ? "active" : ""}`}
+                      onClick={() => setSelectedCategory(cat.id)}
+                    >
+                      <IconUtensils size={14} />
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Menu Grid */}
+                <div className="menu-item-grid">
+                  {availableMenuItems.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleItemClick(item)}
+                      className="menu-item-card"
+                    >
+                      <div>
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "10px", marginBottom: "8px" }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "70px",
+                              background: "var(--cream-light)",
+                              border: "1px solid var(--cream-border)",
+                              borderRadius: "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "var(--bordo)",
+                              marginBottom: "8px",
+                            }}
+                          >
+                            <IconUtensils size={28} />
+                          </div>
+                        )}
+                        <div style={{ fontWeight: "700", fontSize: "14px", color: "var(--text-primary)", marginBottom: "4px" }}>
+                          {item.name}
+                        </div>
+                        {item.description && (
+                          <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.3", marginBottom: "8px" }}>
+                            {item.description.slice(0, 48)}...
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
+                        <span className="item-price-tag">
+                          {formatCurrency(item.base_price)}
+                        </span>
+                        <span style={{ fontSize: "12px", color: "var(--green)", fontWeight: "700", display: "flex", alignItems: "center", gap: "2px" }}>
+                          <IconPlus size={14} /> Add
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Step 2: Menu Browsing & Search */}
-            <div className="sub-card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px", marginBottom: "14px" }}>
-                <h5 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>2. Select Menu Items</h5>
-                <div style={{ position: "relative", width: "220px" }}>
-                  <input
-                    type="text"
-                    value={menuSearchQuery}
-                    onChange={(e) => setMenuSearchQuery(e.target.value)}
-                    placeholder="Search menu..."
-                    style={{
-                      padding: "8px 12px 8px 34px",
-                      borderRadius: "12px",
-                      border: "1.5px solid var(--card-border)",
-                      fontSize: "13px",
-                      width: "100%",
-                      outline: "none",
-                    }}
-                  />
-                  <div style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex" }}>
-                    <IconSearch size={16} />
+            {/* RIGHT: Live Cart Sidebar */}
+            <div className="pos-cart-panel">
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                  <h5 style={{ margin: 0, fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px", color: "var(--bordo)" }}>
+                    <IconReceipt size={20} />
+                    Order Cart
+                  </h5>
+                  {cart.length > 0 && (
+                    <button
+                      type="button"
+                      style={{ background: "none", border: "none", color: "var(--bordo)", fontSize: "12px", cursor: "pointer", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}
+                      onClick={clearCart}
+                    >
+                      <IconTrash size={14} /> Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Order Meta Pill */}
+                <div style={{ padding: "8px 12px", background: "var(--cream-light)", border: "1px solid var(--cream-border)", borderRadius: "10px", fontSize: "12px", marginBottom: "14px", color: "var(--text-primary)" }}>
+                  <strong>Source:</strong> {orderSource.replace("_", " ")}{" "}
+                  {orderSource === "DINE_IN" && selectedTableId && (
+                    <span style={{ color: "var(--bordo)", fontWeight: "700" }}>· Table {tables.find((t) => t.id === selectedTableId)?.number}</span>
+                  )}
+                </div>
+
+                {/* Cart Items List */}
+                {cart.length === 0 ? (
+                  <div style={{ padding: "36px 12px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", opacity: 0.5 }}>
+                      <IconReceipt size={32} />
+                    </div>
+                    Cart is empty. Tap items to build an order.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "320px", overflowY: "auto", paddingRight: "4px" }}>
+                    {cart.map((cItem, idx) => (
+                      <div key={idx} className="cart-item-row">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div>
+                            <strong style={{ fontSize: "13px" }}>{cItem.menuItem.name}</strong>
+                            {cItem.selectedVariant && (
+                              <div style={{ fontSize: "11px", color: "var(--bordo)" }}>
+                                Option: {cItem.selectedVariant.name}
+                              </div>
+                            )}
+                            {cItem.selectedModifiers.length > 0 && (
+                              <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+                                + {cItem.selectedModifiers.map((m) => m.name).join(", ")}
+                              </div>
+                            )}
+                            {cItem.notes && (
+                              <div style={{ fontSize: "11px", fontStyle: "italic", color: "var(--text-muted)" }}>
+                                Note: "{cItem.notes}"
+                              </div>
+                            )}
+                          </div>
+                          <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>
+                            {formatCurrency(cItem.unitPrice * cItem.quantity)}
+                          </span>
+                        </div>
+
+                        {/* Qty Stepper */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <button
+                              type="button"
+                              className="stepper-btn"
+                              onClick={() => updateCartItemQty(idx, -1)}
+                            >
+                              <IconMinus size={12} />
+                            </button>
+                            <span style={{ fontWeight: "700", fontSize: "13px", minWidth: "20px", textAlign: "center" }}>
+                              {cItem.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              className="stepper-btn"
+                              onClick={() => updateCartItemQty(idx, 1)}
+                            >
+                              <IconPlus size={12} />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex" }}
+                            onClick={() => removeCartItem(idx)}
+                            title="Remove Item"
+                          >
+                            <IconTrash size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Financial Summary & Place Buttons */}
+              <div style={{ marginTop: "auto", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                  <span>Subtotal</span>
+                  <strong>{formatCurrency(cartSubtotal)}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "8px", color: "var(--text-secondary)" }}>
+                  <span>Est. Tax (8%)</span>
+                  <span>{formatCurrency(cartTax)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
+                  <span>Total</span>
+                  <span>{formatCurrency(cartTotal)}</span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn-kitchen"
+                    style={{ width: "100%", padding: "12px" }}
+                    disabled={cart.length === 0}
+                    onClick={() => handlePlaceOrder(true, "KITCHEN")}
+                  >
+                    <IconChef size={18} color="#FFFFFF" />
+                    Kitchen & Print KOT
+                  </button>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <button
+                      type="button"
+                      className="btn-receipt"
+                      style={{ padding: "9px 6px", fontSize: "12px", fontWeight: "700" }}
+                      disabled={cart.length === 0}
+                      onClick={() => handlePlaceOrder(false, "CUSTOMER")}
+                    >
+                      <IconReceipt size={15} />
+                      Receipt
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ padding: "9px 6px", fontSize: "12px" }}
+                      disabled={cart.length === 0}
+                      onClick={() => handlePlaceOrder(false)}
+                    >
+                      Save Order
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Category Filter Pills */}
-              <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "8px", marginBottom: "14px" }}>
-                <button
-                  type="button"
-                  className={`sub-nav-tab ${selectedCategory === "ALL" ? "active" : ""}`}
-                  onClick={() => setSelectedCategory("ALL")}
-                >
-                  <IconFilter size={14} />
-                  All Items ({menuItems.length})
-                </button>
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    className={`sub-nav-tab ${selectedCategory === cat.id ? "active" : ""}`}
-                    onClick={() => setSelectedCategory(cat.id)}
-                  >
-                    <IconUtensils size={14} />
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Menu Grid */}
-              <div className="menu-item-grid">
-                {availableMenuItems.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => handleItemClick(item)}
-                    className="menu-item-card"
-                  >
-                    <div>
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          style={{ width: "100%", height: "85px", objectFit: "cover", borderRadius: "10px", marginBottom: "8px" }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: "100%",
-                            height: "70px",
-                            background: "var(--cream-light)",
-                            border: "1px solid var(--cream-border)",
-                            borderRadius: "10px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "var(--bordo)",
-                            marginBottom: "8px",
-                          }}
-                        >
-                          <IconUtensils size={28} />
-                        </div>
-                      )}
-                      <div style={{ fontWeight: "700", fontSize: "14px", color: "var(--text-primary)", marginBottom: "4px" }}>
-                        {item.name}
-                      </div>
-                      {item.description && (
-                        <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: "1.3", marginBottom: "8px" }}>
-                          {item.description.slice(0, 48)}...
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
-                      <span className="item-price-tag">
-                        {formatCurrency(item.base_price)}
-                      </span>
-                      <span style={{ fontSize: "12px", color: "var(--green)", fontWeight: "700", display: "flex", alignItems: "center", gap: "2px" }}>
-                        <IconPlus size={14} /> Add
-                      </span>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
 
-          {/* RIGHT: Live Cart Sidebar */}
-          <div className="pos-cart-panel">
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-                <h5 style={{ margin: 0, fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px", color: "var(--bordo)" }}>
-                  <IconReceipt size={20} />
-                  Order Cart
-                </h5>
-                {cart.length > 0 && (
-                  <button
-                    type="button"
-                    style={{ background: "none", border: "none", color: "var(--bordo)", fontSize: "12px", cursor: "pointer", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}
-                    onClick={clearCart}
-                  >
-                    <IconTrash size={14} /> Clear
-                  </button>
-                )}
-              </div>
+          {/* ── Floating Cart Button (mobile only) ── */}
+          {cart.length > 0 && (
+            <button
+              type="button"
+              className="cart-fab"
+              onClick={() => setShowCart(true)}
+              aria-label={`View cart with ${cart.length} items`}
+            >
+              🛒 View Cart
+              <span className="cart-fab-badge">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
+            </button>
+          )}
 
-              {/* Order Meta Pill */}
-              <div style={{ padding: "8px 12px", background: "var(--cream-light)", border: "1px solid var(--cream-border)", borderRadius: "10px", fontSize: "12px", marginBottom: "14px", color: "var(--text-primary)" }}>
+          {/* ── Mobile Cart Bottom Sheet ── */}
+          <div
+            className={`cart-sheet-overlay ${showCart ? "open" : ""}`}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowCart(false); }}
+            aria-modal="true"
+            role="dialog"
+            aria-label="Order Cart"
+          >
+            <div className="cart-sheet">
+              <div className="cart-sheet-handle" />
+              {/* Render the same cart content inline */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                <h5 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "var(--bordo)" }}>🛒 Order Cart</h5>
+                <button
+                  type="button"
+                  style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
+                  onClick={() => setShowCart(false)}
+                  aria-label="Close cart"
+                >✕</button>
+              </div>
+              <div style={{ padding: "8px 12px", background: "var(--cream-light)", border: "1px solid var(--cream-border)", borderRadius: "10px", fontSize: "12px", marginBottom: "14px" }}>
                 <strong>Source:</strong> {orderSource.replace("_", " ")}{" "}
                 {orderSource === "DINE_IN" && selectedTableId && (
                   <span style={{ color: "var(--bordo)", fontWeight: "700" }}>· Table {tables.find((t) => t.id === selectedTableId)?.number}</span>
                 )}
               </div>
-
-              {/* Cart Items List */}
               {cart.length === 0 ? (
-                <div style={{ padding: "36px 12px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", opacity: 0.5 }}>
-                    <IconReceipt size={32} />
-                  </div>
-                  Cart is empty. Tap items to build an order.
-                </div>
+                <div style={{ padding: "36px 12px", textAlign: "center", color: "var(--text-muted)" }}>Cart is empty.</div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "320px", overflowY: "auto", paddingRight: "4px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
                   {cart.map((cItem, idx) => (
                     <div key={idx} className="cart-item-row">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div>
                           <strong style={{ fontSize: "13px" }}>{cItem.menuItem.name}</strong>
-                          {cItem.selectedVariant && (
-                            <div style={{ fontSize: "11px", color: "var(--bordo)" }}>
-                              Option: {cItem.selectedVariant.name}
-                            </div>
-                          )}
-                          {cItem.selectedModifiers.length > 0 && (
-                            <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
-                              + {cItem.selectedModifiers.map((m) => m.name).join(", ")}
-                            </div>
-                          )}
-                          {cItem.notes && (
-                            <div style={{ fontSize: "11px", fontStyle: "italic", color: "var(--text-muted)" }}>
-                              Note: "{cItem.notes}"
-                            </div>
-                          )}
+                          {cItem.selectedVariant && <div style={{ fontSize: "11px", color: "var(--bordo)" }}>Option: {cItem.selectedVariant.name}</div>}
+                          {cItem.selectedModifiers.length > 0 && <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>+ {cItem.selectedModifiers.map((m) => m.name).join(", ")}</div>}
                         </div>
-                        <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>
-                          {formatCurrency(cItem.unitPrice * cItem.quantity)}
-                        </span>
+                        <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>{`${(cItem.unitPrice * cItem.quantity).toFixed(2)}`}</span>
                       </div>
-
-                      {/* Qty Stepper */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <button
-                            type="button"
-                            className="stepper-btn"
-                            onClick={() => updateCartItemQty(idx, -1)}
-                          >
-                            <IconMinus size={12} />
-                          </button>
-                          <span style={{ fontWeight: "700", fontSize: "13px", minWidth: "20px", textAlign: "center" }}>
-                            {cItem.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            className="stepper-btn"
-                            onClick={() => updateCartItemQty(idx, 1)}
-                          >
-                            <IconPlus size={12} />
-                          </button>
+                          <button type="button" className="stepper-btn" onClick={() => updateCartItemQty(idx, -1)}>−</button>
+                          <span style={{ fontWeight: "700", fontSize: "13px", minWidth: "20px", textAlign: "center" }}>{cItem.quantity}</span>
+                          <button type="button" className="stepper-btn" onClick={() => updateCartItemQty(idx, 1)}>+</button>
                         </div>
-                        <button
-                          type="button"
-                          style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex" }}
-                          onClick={() => removeCartItem(idx)}
-                          title="Remove Item"
-                        >
-                          <IconTrash size={15} />
-                        </button>
+                        <button type="button" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }} onClick={() => removeCartItem(idx)} title="Remove">🗑</button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Financial Summary & Place Buttons */}
-            <div style={{ marginTop: "auto", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                <span>Subtotal</span>
-                <strong>{formatCurrency(cartSubtotal)}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "8px", color: "var(--text-secondary)" }}>
-                <span>Est. Tax (8%)</span>
-                <span>{formatCurrency(cartTax)}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
-                <span>Total</span>
-                <span>{formatCurrency(cartTotal)}</span>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  style={{ width: "100%", padding: "12px" }}
-                  disabled={cart.length === 0}
-                  onClick={() => handlePlaceOrder(true, "KITCHEN")}
-                >
-                  <IconChef size={18} color="#FFFFFF" />
-                  Kitchen & Print KOT
-                </button>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    style={{ padding: "9px 6px", fontSize: "12px", fontWeight: "700" }}
-                    disabled={cart.length === 0}
-                    onClick={() => handlePlaceOrder(false, "CUSTOMER")}
-                  >
-                    <IconReceipt size={15} />
-                    Receipt
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    style={{ padding: "9px 6px", fontSize: "12px" }}
-                    disabled={cart.length === 0}
-                    onClick={() => handlePlaceOrder(false)}
-                  >
-                    Save Order
-                  </button>
+              <div style={{ marginTop: "16px", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
+                  <span>Subtotal</span><strong>{`${cartSubtotal.toFixed(2)}`}</strong>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Floating Cart Button (mobile only) ── */}
-        {cart.length > 0 && (
-          <button
-            type="button"
-            className="cart-fab"
-            onClick={() => setShowCart(true)}
-            aria-label={`View cart with ${cart.length} items`}
-          >
-            🛒 View Cart
-            <span className="cart-fab-badge">{cart.reduce((s, i) => s + i.quantity, 0)}</span>
-          </button>
-        )}
-
-        {/* ── Mobile Cart Bottom Sheet ── */}
-        <div
-          className={`cart-sheet-overlay ${showCart ? "open" : ""}`}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCart(false); }}
-          aria-modal="true"
-          role="dialog"
-          aria-label="Order Cart"
-        >
-          <div className="cart-sheet">
-            <div className="cart-sheet-handle" />
-            {/* Render the same cart content inline */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-              <h5 style={{ margin: 0, fontSize: "16px", fontWeight: "700", color: "var(--bordo)" }}>🛒 Order Cart</h5>
-              <button
-                type="button"
-                style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "20px", cursor: "pointer", lineHeight: 1 }}
-                onClick={() => setShowCart(false)}
-                aria-label="Close cart"
-              >✕</button>
-            </div>
-            <div style={{ padding: "8px 12px", background: "var(--cream-light)", border: "1px solid var(--cream-border)", borderRadius: "10px", fontSize: "12px", marginBottom: "14px" }}>
-              <strong>Source:</strong> {orderSource.replace("_", " ")}{" "}
-              {orderSource === "DINE_IN" && selectedTableId && (
-                <span style={{ color: "var(--bordo)", fontWeight: "700" }}>· Table {tables.find((t) => t.id === selectedTableId)?.number}</span>
-              )}
-            </div>
-            {cart.length === 0 ? (
-              <div style={{ padding: "36px 12px", textAlign: "center", color: "var(--text-muted)" }}>Cart is empty.</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", paddingRight: "4px", flex: 1 }}>
-                {cart.map((cItem, idx) => (
-                  <div key={idx} className="cart-item-row">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <div>
-                        <strong style={{ fontSize: "13px" }}>{cItem.menuItem.name}</strong>
-                        {cItem.selectedVariant && <div style={{ fontSize: "11px", color: "var(--bordo)" }}>Option: {cItem.selectedVariant.name}</div>}
-                        {cItem.selectedModifiers.length > 0 && <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>+ {cItem.selectedModifiers.map((m) => m.name).join(", ")}</div>}
-                      </div>
-                      <span style={{ fontWeight: "700", fontSize: "13px", color: "var(--bordo)" }}>{`${(cItem.unitPrice * cItem.quantity).toFixed(2)}`}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <button type="button" className="stepper-btn" onClick={() => updateCartItemQty(idx, -1)}>−</button>
-                        <span style={{ fontWeight: "700", fontSize: "13px", minWidth: "20px", textAlign: "center" }}>{cItem.quantity}</span>
-                        <button type="button" className="stepper-btn" onClick={() => updateCartItemQty(idx, 1)}>+</button>
-                      </div>
-                      <button type="button" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }} onClick={() => removeCartItem(idx)} title="Remove">🗑</button>
-                    </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "8px", color: "var(--text-secondary)" }}>
+                  <span>Est. Tax (8%)</span><span>{`${cartTax.toFixed(2)}`}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
+                  <span>Total</span><span>{`${cartTotal.toFixed(2)}`}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ width: "100%", padding: "14px" }}
+                    disabled={cart.length === 0}
+                    onClick={() => { setShowCart(false); handlePlaceOrder(true, "KITCHEN"); }}
+                  >
+                    🍽️ Kitchen & Print KOT
+                  </button>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <button type="button" className="btn-secondary" style={{ padding: "11px 6px", fontSize: "12px" }} disabled={cart.length === 0} onClick={() => { setShowCart(false); handlePlaceOrder(false, "CUSTOMER"); }}>🧾 Receipt</button>
+                    <button type="button" className="btn-secondary" style={{ padding: "11px 6px", fontSize: "12px" }} disabled={cart.length === 0} onClick={() => { setShowCart(false); handlePlaceOrder(false); }}>Save</button>
                   </div>
-                ))}
-              </div>
-            )}
-            <div style={{ marginTop: "16px", borderTop: "1.5px solid var(--cream-border)", paddingTop: "14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "4px" }}>
-                <span>Subtotal</span><strong>{`${cartSubtotal.toFixed(2)}`}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "8px", color: "var(--text-secondary)" }}>
-                <span>Est. Tax (8%)</span><span>{`${cartTax.toFixed(2)}`}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "17px", fontWeight: "800", color: "var(--bordo)", marginBottom: "14px" }}>
-                <span>Total</span><span>{`${cartTotal.toFixed(2)}`}</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  style={{ width: "100%", padding: "14px" }}
-                  disabled={cart.length === 0}
-                  onClick={() => { setShowCart(false); handlePlaceOrder(true, "KITCHEN"); }}
-                >
-                  🍽️ Kitchen & Print KOT
-                </button>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                  <button type="button" className="btn-secondary" style={{ padding: "11px 6px", fontSize: "12px" }} disabled={cart.length === 0} onClick={() => { setShowCart(false); handlePlaceOrder(false, "CUSTOMER"); }}>🧾 Receipt</button>
-                  <button type="button" className="btn-secondary" style={{ padding: "11px 6px", fontSize: "12px" }} disabled={cart.length === 0} onClick={() => { setShowCart(false); handlePlaceOrder(false); }}>Save</button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         </>
       )}
 
@@ -1177,10 +1198,12 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
             <div className="active-orders-empty">
               <IconReceipt size={34} color="var(--text-muted)" />
               <h5>No active orders</h5>
-              <p>New orders will appear here when they are saved.</p>
-              <button type="button" className="btn-primary" onClick={() => setActiveSubtab("new_order")}>
-                <IconPlus size={16} /> Take an order
-              </button>
+              <p>{canCreateOrder ? "New orders will appear here when they are saved." : "Orders sent from the front counter will appear here."}</p>
+              {canCreateOrder && (
+                <button type="button" className="btn-primary" onClick={() => setActiveSubtab("new_order")}>
+                  <IconPlus size={16} /> Take an order
+                </button>
+              )}
             </div>
           ) : (
             <div className="active-order-card-list">
@@ -1209,17 +1232,21 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                     </div>
 
                     <div className="active-order-actions">
-                      <button type="button" className="btn-success btn-sm" onClick={() => handleOpenPayment(ord)}>
-                        <IconCash size={15} color="#FFFFFF" /> Pay
-                      </button>
-                      <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintKitchenTicket(ord)}>
+                      {canProcessPayment && (
+                        <button type="button" className="btn-pay btn-sm" onClick={() => handleOpenPayment(ord)}>
+                          <IconCash size={15} color="#FFFFFF" /> Pay
+                        </button>
+                      )}
+                      <button type="button" className="btn-receipt btn-sm" onClick={() => handlePrintKitchenTicket(ord)}>
                         <IconChef size={15} /> KOT
                       </button>
-                      <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintCustomerReceipt(ord)}>
-                        <IconReceipt size={15} /> Receipt
-                      </button>
-                      {ord.status === "OPEN" && (
-                        <button type="button" className="btn-primary btn-sm" onClick={() => handleSendToKitchen(ord.id)}>
+                      {canProcessPayment && (
+                        <button type="button" className="btn-secondary btn-sm" onClick={() => handlePrintCustomerReceipt(ord)}>
+                          <IconReceipt size={15} /> Receipt
+                        </button>
+                      )}
+                      {ord.status === "OPEN" && canCreateOrder && (
+                        <button type="button" className="btn-kitchen btn-sm" onClick={() => handleSendToKitchen(ord.id)}>
                           <IconChef size={15} color="#FFFFFF" /> Send to kitchen
                         </button>
                       )}
@@ -1231,9 +1258,11 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                       <button type="button" className="btn-secondary btn-sm" onClick={() => handleOpenOrderDetails(ord)}>
                         View items
                       </button>
-                      <button type="button" className="active-order-void" onClick={() => openVoidOrderDialog(ord.id)} aria-label={`Void order ${ord.id.slice(0, 8)}`}>
-                        <IconClose size={15} />
-                      </button>
+                      {canVoidOrder && (
+                        <button type="button" className="active-order-void" onClick={() => openVoidOrderDialog(ord.id)} aria-label={`Void order ${ord.id.slice(0, 8)}`}>
+                          <IconClose size={15} />
+                        </button>
+                      )}
                     </div>
                   </article>
                 );
@@ -1599,13 +1628,15 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                         </span>
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="btn-danger btn-sm"
-                          onClick={() => openVoidItemDialog(selectedOrderDetails.id, item.id)}
-                        >
-                          Void Item
-                        </button>
+                        {canVoidOrder && (
+                          <button
+                            type="button"
+                            className="btn-danger btn-sm"
+                            onClick={() => openVoidItemDialog(selectedOrderDetails.id, item.id)}
+                          >
+                            Void Item
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1627,16 +1658,18 @@ export default function OrderManagement({ initialTableId, onSwitchToTables }: Or
                 >
                   🍳 Print KOT
                 </button>
-                <button
-                  type="button"
-                  className="btn-secondary btn-sm"
-                  onClick={() => {
-                    handlePrintCustomerReceipt(selectedOrderDetails);
-                  }}
-                >
-                  🧾 Print Receipt
-                </button>
-                {selectedOrderDetails.status !== "CLOSED" && (
+                {canProcessPayment && (
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => {
+                      handlePrintCustomerReceipt(selectedOrderDetails);
+                    }}
+                  >
+                    🧾 Print Receipt
+                  </button>
+                )}
+                {selectedOrderDetails.status !== "CLOSED" && canProcessPayment && (
                   <button
                     type="button"
                     className="btn-success btn-sm"
