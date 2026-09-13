@@ -1,69 +1,117 @@
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap");
 
-/* ─── Modern Luxury POS Theme Design System ─────────────────────────────────── */
+/* ─── Fast Food Restaurant POS Theme Design System ───────────────────────────── */
 :root {
-  /* Core Brand Colors */
-  --bordo: #6C151E;
-  --bordo-hover: #851c26;
-  --bordo-dark: #500f16;
-  --bordo-light: #FAF0F1;
-  --bordo-border: #E6C5C9;
-  --bordo-gradient: linear-gradient(135deg, #6C151E 0%, #8D1F2B 100%);
+  /* Fast Food Primary: Flame Ketchup Red (High Appetite & Urgency) */
+  --ff-red: #E11D48;
+  --ff-red-hover: #BE123C;
+  --ff-red-dark: #9F1239;
+  --ff-red-light: #FFF1F2;
+  --ff-red-border: #FECDD3;
+  --ff-red-gradient: linear-gradient(135deg, #E11D48 0%, #F43F5E 100%);
 
-  --green: #0F3D3A;
-  --green-hover: #175752;
-  --green-dark: #0A2A28;
-  --green-light: #EEF6F5;
-  --green-border: #C8DFDC;
-  --green-gradient: linear-gradient(135deg, #0F3D3A 0%, #1C5F5A 100%);
+  /* Fast Food Secondary: Golden Cheddar / Mustard Yellow (Warmth, Energy, Fries) */
+  --ff-yellow: #F59E0B;
+  --ff-yellow-hover: #D97706;
+  --ff-yellow-dark: #B45309;
+  --ff-yellow-light: #FEF3C7;
+  --ff-yellow-border: #FDE68A;
+  --ff-yellow-gradient: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
 
-  --cream: #F5DABF;
-  --cream-light: #FAF1E8;
-  --cream-bg: #FDFBF7;
-  --cream-dark: #E2C1A0;
-  --cream-border: #EBD9C8;
-  --cream-gradient: linear-gradient(135deg, #F5DABF 0%, #FAF1E8 100%);
+  /* Fast Food Action: Crisp Fresh Lettuce Green (Checkout, Settle & Freshness) */
+  --ff-green: #059669;
+  --ff-green-hover: #047857;
+  --ff-green-dark: #065F46;
+  --ff-green-light: #ECFDF5;
+  --ff-green-border: #A7F3D0;
+  --ff-green-gradient: linear-gradient(135deg, #059669 0%, #10B981 100%);
 
-  /* Backgrounds & Surfaces */
-  --bg-main: #F8F6F2;
-  --bg-gradient: linear-gradient(160deg, #FDFBF8 0%, #F5EFE6 100%);
+  /* Fast Food Crispy Fried Amber / Chicken (Sides & Takeaway) */
+  --ff-orange: #EA580C;
+  --ff-orange-hover: #C2410C;
+  --ff-orange-light: #FFF7ED;
+  --ff-orange-border: #FED7AA;
+  --ff-orange-gradient: linear-gradient(135deg, #EA580C 0%, #F97316 100%);
+
+  /* Fast Food Soda Pop Cyan (Beverages & Ice) */
+  --ff-cyan: #0284C7;
+  --ff-cyan-hover: #0369A1;
+  --ff-cyan-light: #E0F2FE;
+  --ff-cyan-border: #BAE6FD;
+  --ff-cyan-gradient: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%);
+
+  /* Fast Food Berry Shake Pink (Desserts & Sweets) */
+  --ff-pink: #DB2777;
+  --ff-pink-hover: #BE185D;
+  --ff-pink-light: #FDF2F8;
+  --ff-pink-border: #FBCFE8;
+
+  /* Fast Food Value Combo Violet (Deals & Specials) */
+  --ff-purple: #7C3AED;
+  --ff-purple-hover: #6D28D9;
+  --ff-purple-light: #F5F3FF;
+  --ff-purple-border: #DDD6FE;
+
+  /* Touch Terminal Surfaces (High Contrast Fast Food Register) */
+  --bg-main: #F8FAFC;
+  --bg-gradient: linear-gradient(165deg, #F8FAFC 0%, #EEF2F6 100%);
   --card-bg: #FFFFFF;
-  --card-border: #E8E2D8;
-  --card-shadow: 0 4px 16px rgba(108, 21, 30, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --card-shadow-hover: 0 10px 28px rgba(108, 21, 30, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+  --card-border: #E2E8F0;
+  --card-shadow: 0 4px 16px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --card-shadow-hover: 0 12px 28px rgba(225, 29, 72, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
 
   /* Typography */
-  --text-primary: #1A1F24;
-  --text-secondary: #58636E;
-  --text-muted: #8E99A4;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
   --text-inverse: #FFFFFF;
 
-  /* Accent Map */
-  --primary-color: var(--bordo);
-  --primary-hover: var(--bordo-hover);
-  --primary-light: var(--bordo-light);
-  --secondary-color: var(--green);
-  --secondary-hover: var(--green-hover);
-  --secondary-light: var(--green-light);
+  /* Brand Token Mappings (Remap legacy tokens to Fast Food palette) */
+  --bordo: var(--ff-red);
+  --bordo-hover: var(--ff-red-hover);
+  --bordo-dark: var(--ff-red-dark);
+  --bordo-light: var(--ff-red-light);
+  --bordo-border: var(--ff-red-border);
+  --bordo-gradient: linear-gradient(135deg, #E11D48 0%, #F59E0B 100%);
+
+  --green: var(--ff-green);
+  --green-hover: var(--ff-green-hover);
+  --green-dark: var(--ff-green-dark);
+  --green-light: var(--ff-green-light);
+  --green-border: var(--ff-green-border);
+  --green-gradient: var(--ff-green-gradient);
+
+  --cream: #FDE68A;
+  --cream-light: #FFFBEB;
+  --cream-bg: #FFFFFF;
+  --cream-dark: #F59E0B;
+  --cream-border: #E2E8F0;
+  --cream-gradient: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+
+  --primary: var(--ff-red);
+  --primary-color: var(--ff-red);
+  --primary-hover: var(--ff-red-hover);
+  --primary-light: var(--ff-red-light);
+
+  --secondary: var(--ff-green);
+  --secondary-color: var(--ff-green);
+  --secondary-hover: var(--ff-green-hover);
+  --secondary-light: var(--ff-green-light);
+
+  --surface-warm: #FFFBEB;
 
   /* Keypad Colors */
   --key-bg: #FFFFFF;
-  --key-border: #E5DDD0;
-  --key-hover: #FAF1E8;
-  --key-text: var(--bordo);
-  --dot-empty: #E2D7C9;
-  --dot-filled: var(--bordo);
+  --key-border: #CBD5E1;
+  --key-hover: #FEF3C7;
+  --key-text: #0F172A;
+  --dot-empty: #CBD5E1;
+  --dot-filled: var(--ff-red);
 
   /* Utility Borders */
-  --border-light: #EBE4D8;
-  --border-medium: #DACFC0;
-  --border-color: #E2D9CC;
-
-  /* Short-hand aliases used across components — kept in sync with the
-     brand tokens above so a single source of truth drives both names. */
-  --primary: var(--bordo);
-  --secondary: var(--green);
-  --surface-warm: var(--cream-light);
+  --border-light: #E2E8F0;
+  --border-medium: #CBD5E1;
+  --border-color: #E2E8F0;
 }
 
 .avatar-sm {
@@ -145,7 +193,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(circle at top, #FAF1E8 0%, #F5EFE6 50%, #ECE3D6 100%);
+  background: radial-gradient(circle at top, #FFF1F2 0%, #FFFBEB 35%, #F1F5F9 100%);
 }
 
 .pin-card {
@@ -154,8 +202,8 @@ body {
   border-radius: 28px;
   text-align: center;
   background: #FFFFFF;
-  border: 1.5px solid var(--cream-border);
-  box-shadow: 0 20px 60px rgba(108, 21, 30, 0.08), 0 4px 16px rgba(15, 61, 58, 0.06);
+  border: 2px solid #FECDD3;
+  box-shadow: 0 20px 60px rgba(225, 29, 72, 0.12), 0 4px 16px rgba(245, 158, 11, 0.08);
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -163,27 +211,27 @@ body {
   width: 68px;
   height: 68px;
   margin: 0 auto 16px;
-  background: var(--bordo-gradient);
-  border-radius: 20px;
+  background: linear-gradient(135deg, #E11D48 0%, #F59E0B 100%);
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  box-shadow: 0 8px 24px rgba(108, 21, 30, 0.25);
+  box-shadow: 0 8px 24px rgba(225, 29, 72, 0.35);
 }
 
 .pin-header h1 {
   font-size: 26px;
-  font-weight: 800;
-  color: var(--bordo);
+  font-weight: 900;
+  color: #E11D48;
   letter-spacing: -0.5px;
   margin-bottom: 4px;
 }
 
 .pin-header p {
   font-size: 13px;
-  color: var(--text-secondary);
-  font-weight: 500;
+  color: #64748B;
+  font-weight: 600;
   margin-bottom: 24px;
 }
 

@@ -507,13 +507,13 @@ export default function TotalOrders() {
             <div className="card-header-row" style={{ marginBottom: "18px" }}>
                 <div>
                     <h4 style={{ display: "flex", alignItems: "center", gap: "10px", margin: 0, fontSize: "20px" }}>
-                        <span style={{ background: "linear-gradient(135deg, #059669 0%, #10B981 100%)", color: "#FFF", width: "32px", height: "32px", borderRadius: "8px", display: "inline-flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(5, 150, 105, 0.3)" }}>
+                        <span style={{ background: "linear-gradient(135deg, #E11D48 0%, #F59E0B 100%)", color: "#FFF", width: "32px", height: "32px", borderRadius: "8px", display: "inline-flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(225, 29, 72, 0.3)" }}>
                             <IconChart size={18} color="#FFFFFF" />
                         </span>
-                        Restaurant Sales & Orders Intelligence
+                        Fast Food Sales & Orders Intelligence
                     </h4>
                     <p className="subtitle" style={{ marginTop: "4px" }}>
-                        Multi-channel sales performance, meal rush analytics, top sellers, and completed order history
+                        Counter & drive-thru sales performance, meal rush hours, top menu items, and completed transaction history
                     </p>
                 </div>
 

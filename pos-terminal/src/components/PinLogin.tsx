@@ -69,14 +69,14 @@ export default function PinLogin({ onLogin, error: externalError, clearError }: 
   return (
     <main className="pin-login">
       <section className="pin-card">
-        {/* Luxury Brand Header */}
+        {/* Fast Food Brand Header */}
         <div className="pin-logo-badge">
           <IconShield size={34} color="#FFFFFF" />
         </div>
 
         <div className="pin-header">
-          <h1>RESTAURANT POS</h1>
-          <p>Secure Terminal Access</p>
+          <h1>FAST FOOD POS</h1>
+          <p>Quick-Service Terminal • Cashier Login</p>
         </div>
 
         {/* PIN Dots Display */}

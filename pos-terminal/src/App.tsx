@@ -138,8 +138,8 @@ function TerminalContent() {
               <IconPosTerminal size={22} color="#FFFFFF" />
             </div>
             <div className="sidebar-brand-text">
-              <span className="sidebar-brand-title">Restaurant POS</span>
-              <span className="sidebar-brand-subtitle">Point of Sale</span>
+              <span className="sidebar-brand-title">Fast Food POS</span>
+              <span className="sidebar-brand-subtitle">Express Terminal</span>
             </div>
           </div>
 
